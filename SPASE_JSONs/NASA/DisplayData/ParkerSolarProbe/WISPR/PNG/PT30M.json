@@ -1,0 +1,203 @@
+{
+   "data": {
+      "id": "10.48322/yv4s-3d93",
+      "type": "dois",
+      "attributes": {
+         "doi": "10.48322/yv4s-3d93",
+         "prefix": "10.48322",
+         "suffix": "yv4s-3d93",
+         "identifiers": [
+            {
+               "identifier": "spase://NASA/DisplayData/ParkerSolarProbe/WISPR/PNG/PT30M",
+               "identifierType": "SPASE ResourceID"
+            },
+            {
+               "identifier": "spase://NASA/NumericalData/ParkerSolarProbe/WISPR/PNG/PT30m",
+               "identifierType": "Prior SPASE ResourceID"
+            }
+         ],
+         "alternateIdentifiers": [
+            {
+               "alternateIdentifierType": "SPASE ResourceID",
+               "alternateIdentifier": "spase://NASA/DisplayData/ParkerSolarProbe/WISPR/PNG/PT30M"
+            },
+            {
+               "alternateIdentifierType": "Prior SPASE ResourceID",
+               "alternateIdentifier": "spase://NASA/NumericalData/ParkerSolarProbe/WISPR/PNG/PT30m"
+            }
+         ],
+         "creators": [
+            {
+               "nameType": "Personal",
+               "name": "Mark Linton",
+               "givenName": "Mark",
+               "familyName": "Linton",
+               "affiliation": [
+                  "US Naval Research Laboratory"
+               ],
+               "nameIdentifiers": []
+            },
+            {
+               "nameType": "Personal",
+               "nameIdentifiers": [
+                  {
+                     "nameIdentifier": "https://orcid.org/0000-0001-9027-8249",
+                     "nameIdentifierScheme": "ORCID",
+                     "schemeUri": "https://orcid.org"
+                  }
+               ],
+               "name": "Russell A. Howard",
+               "givenName": "Russell A.",
+               "familyName": "Howard",
+               "affiliation": [
+                  "Johns Hopkins University Applied Physics Laboratory"
+               ]
+            }
+         ],
+         "titles": [
+            {
+               "title": "Parker Solar Probe, WISPR PNG Images",
+               "lang": "en"
+            }
+         ],
+         "publisher": "NRL",
+         "container": {},
+         "publicationYear": 2025,
+         "subjects": [
+            {
+               "subject": "ImageIntensity"
+            }
+         ],
+         "contributors": [
+            {
+               "nameType": "Personal",
+               "nameIdentifiers": [
+                  {
+                     "nameIdentifier": "https://orcid.org/0000-0002-8692-6925",
+                     "nameIdentifierScheme": "ORCID",
+                     "schemeUri": "https://orcid.org"
+                  }
+               ],
+               "name": "Karl Battams",
+               "givenName": "Karl",
+               "familyName": "Battams",
+               "affiliation": [
+                  "US Naval Research Laboratory"
+               ],
+               "contributorType": "DataCurator"
+            },
+            {
+               "nameType": "Personal",
+               "name": "Nathan B. Rich",
+               "givenName": "Nathan B.",
+               "familyName": "Rich",
+               "affiliation": [
+                  "US Naval Research Laboratory"
+               ],
+               "contributorType": "ContactPerson",
+               "nameIdentifiers": []
+            }
+         ],
+         "dates": [
+            {
+               "date": "2018-11-01T00:45:48/..",
+               "dateType": "Coverage"
+            }
+         ],
+         "language": "en",
+         "types": {
+            "schemaOrg": "Dataset",
+            "citeproc": "dataset",
+            "bibtex": "misc",
+            "ris": "DATA",
+            "resourceTypeGeneral": "Dataset"
+         },
+         "relatedIdentifiers": [
+            {
+               "relatedIdentifier": "https://link.springer.com/article/10.1007/s11214-014-0114-y",
+               "relatedIdentifierType": "URL",
+               "relationType": "isSupplementedBy"
+            },
+            {
+               "relatedIdentifier": "https://link.springer.com/article/10.1007/s11207-021-01847-9",
+               "relatedIdentifierType": "URL",
+               "relationType": "isSupplementedBy"
+            }
+         ],
+         "relatedItems": [],
+         "sizes": [],
+         "formats": [
+            "FITS"
+         ],
+         "version": null,
+         "rightsList": [],
+         "descriptions": [
+            {
+               "description": "Browse images created using the L3 data product. These data are separated by encounter and by camera (\"inner\" and \"outer\")",
+               "descriptionType": "Abstract",
+               "lang": "en"
+            }
+         ],
+         "geoLocations": [
+            {
+               "geoLocationPlace": "Heliosphere.Inner"
+            },
+            {
+               "geoLocationPlace": "Sun.Corona"
+            }
+         ],
+         "fundingReferences": [],
+         "xml": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHJlc291cmNlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zPSJodHRwOi8vZGF0YWNpdGUub3JnL3NjaGVtYS9rZXJuZWwtNCIgeHNpOnNjaGVtYUxvY2F0aW9uPSJodHRwOi8vZGF0YWNpdGUub3JnL3NjaGVtYS9rZXJuZWwtNCBodHRwOi8vc2NoZW1hLmRhdGFjaXRlLm9yZy9tZXRhL2tlcm5lbC00L21ldGFkYXRhLnhzZCI+CiAgPGlkZW50aWZpZXIgaWRlbnRpZmllclR5cGU9IkRPSSI+MTAuNDgzMjIvWVY0Uy0zRDkzPC9pZGVudGlmaWVyPgogIDxjcmVhdG9ycz4KICAgIDxjcmVhdG9yPgogICAgICA8Y3JlYXRvck5hbWUgbmFtZVR5cGU9IlBlcnNvbmFsIj5MaW50b24sIE1hcms8L2NyZWF0b3JOYW1lPgogICAgICA8Z2l2ZW5OYW1lPk1hcms8L2dpdmVuTmFtZT4KICAgICAgPGZhbWlseU5hbWU+TGludG9uPC9mYW1pbHlOYW1lPgogICAgICA8YWZmaWxpYXRpb24+VVMgTmF2YWwgUmVzZWFyY2ggTGFib3JhdG9yeTwvYWZmaWxpYXRpb24+CiAgICA8L2NyZWF0b3I+CiAgICA8Y3JlYXRvcj4KICAgICAgPGNyZWF0b3JOYW1lIG5hbWVUeXBlPSJQZXJzb25hbCI+SG93YXJkLCBSdXNzZWxsIEEuPC9jcmVhdG9yTmFtZT4KICAgICAgPGdpdmVuTmFtZT5SdXNzZWxsIEEuPC9naXZlbk5hbWU+CiAgICAgIDxmYW1pbHlOYW1lPkhvd2FyZDwvZmFtaWx5TmFtZT4KICAgICAgPG5hbWVJZGVudGlmaWVyIG5hbWVJZGVudGlmaWVyU2NoZW1lPSJPUkNJRCIgc2NoZW1lVVJJPSJodHRwczovL29yY2lkLm9yZyI+aHR0cHM6Ly9vcmNpZC5vcmcvMDAwMC0wMDAxLTkwMjctODI0OTwvbmFtZUlkZW50aWZpZXI+CiAgICAgIDxhZmZpbGlhdGlvbj5Kb2hucyBIb3BraW5zIFVuaXZlcnNpdHkgQXBwbGllZCBQaHlzaWNzIExhYm9yYXRvcnk8L2FmZmlsaWF0aW9uPgogICAgPC9jcmVhdG9yPgogIDwvY3JlYXRvcnM+CiAgPHRpdGxlcz4KICAgIDx0aXRsZSB4bWw6bGFuZz0iZW4iPlBhcmtlciBTb2xhciBQcm9iZSwgV0lTUFIgUE5HIEltYWdlczwvdGl0bGU+CiAgPC90aXRsZXM+CiAgPHB1Ymxpc2hlcj5OUkw8L3B1Ymxpc2hlcj4KICA8cHVibGljYXRpb25ZZWFyPjIwMjU8L3B1YmxpY2F0aW9uWWVhcj4KICA8cmVzb3VyY2VUeXBlIHJlc291cmNlVHlwZUdlbmVyYWw9IkRhdGFzZXQiLz4KICA8c3ViamVjdHM+CiAgICA8c3ViamVjdD5JbWFnZUludGVuc2l0eTwvc3ViamVjdD4KICA8L3N1YmplY3RzPgogIDxjb250cmlidXRvcnM+CiAgICA8Y29udHJpYnV0b3IgY29udHJpYnV0b3JUeXBlPSJEYXRhQ3VyYXRvciI+CiAgICAgIDxjb250cmlidXRvck5hbWUgbmFtZVR5cGU9IlBlcnNvbmFsIj5CYXR0YW1zLCBLYXJsPC9jb250cmlidXRvck5hbWU+CiAgICAgIDxnaXZlbk5hbWU+S2FybDwvZ2l2ZW5OYW1lPgogICAgICA8ZmFtaWx5TmFtZT5CYXR0YW1zPC9mYW1pbHlOYW1lPgogICAgICA8bmFtZUlkZW50aWZpZXIgbmFtZUlkZW50aWZpZXJTY2hlbWU9Ik9SQ0lEIiBzY2hlbWVVUkk9Imh0dHBzOi8vb3JjaWQub3JnIj5odHRwczovL29yY2lkLm9yZy8wMDAwLTAwMDItODY5Mi02OTI1PC9uYW1lSWRlbnRpZmllcj4KICAgICAgPGFmZmlsaWF0aW9uPlVTIE5hdmFsIFJlc2VhcmNoIExhYm9yYXRvcnk8L2FmZmlsaWF0aW9uPgogICAgPC9jb250cmlidXRvcj4KICAgIDxjb250cmlidXRvciBjb250cmlidXRvclR5cGU9IkNvbnRhY3RQZXJzb24iPgogICAgICA8Y29udHJpYnV0b3JOYW1lIG5hbWVUeXBlPSJQZXJzb25hbCI+UmljaCwgTmF0aGFuIEIuPC9jb250cmlidXRvck5hbWU+CiAgICAgIDxnaXZlbk5hbWU+TmF0aGFuIEIuPC9naXZlbk5hbWU+CiAgICAgIDxmYW1pbHlOYW1lPlJpY2g8L2ZhbWlseU5hbWU+CiAgICAgIDxhZmZpbGlhdGlvbj5VUyBOYXZhbCBSZXNlYXJjaCBMYWJvcmF0b3J5PC9hZmZpbGlhdGlvbj4KICAgIDwvY29udHJpYnV0b3I+CiAgPC9jb250cmlidXRvcnM+CiAgPGRhdGVzPgogICAgPGRhdGUgZGF0ZVR5cGU9IkNvdmVyYWdlIj4yMDE4LTExLTAxVDAwOjQ1OjQ4Ly4uPC9kYXRlPgogIDwvZGF0ZXM+CiAgPGxhbmd1YWdlPmVuPC9sYW5ndWFnZT4KICA8YWx0ZXJuYXRlSWRlbnRpZmllcnM+CiAgICA8YWx0ZXJuYXRlSWRlbnRpZmllciBhbHRlcm5hdGVJZGVudGlmaWVyVHlwZT0iU1BBU0UgUmVzb3VyY2VJRCI+c3Bhc2U6Ly9OQVNBL0Rpc3BsYXlEYXRhL1BhcmtlclNvbGFyUHJvYmUvV0lTUFIvUE5HL1BUMzBNPC9hbHRlcm5hdGVJZGVudGlmaWVyPgogICAgPGFsdGVybmF0ZUlkZW50aWZpZXIgYWx0ZXJuYXRlSWRlbnRpZmllclR5cGU9IlByaW9yIFNQQVNFIFJlc291cmNlSUQiPnNwYXNlOi8vTkFTQS9OdW1lcmljYWxEYXRhL1BhcmtlclNvbGFyUHJvYmUvV0lTUFIvUE5HL1BUMzBtPC9hbHRlcm5hdGVJZGVudGlmaWVyPgogIDwvYWx0ZXJuYXRlSWRlbnRpZmllcnM+CiAgPHJlbGF0ZWRJZGVudGlmaWVycz4KICAgIDxyZWxhdGVkSWRlbnRpZmllciByZWxhdGVkSWRlbnRpZmllclR5cGU9IlVSTCIgcmVsYXRpb25UeXBlPSJpc1N1cHBsZW1lbnRlZEJ5Ij5odHRwczovL2xpbmsuc3ByaW5nZXIuY29tL2FydGljbGUvMTAuMTAwNy9zMTEyMTQtMDE0LTAxMTQteTwvcmVsYXRlZElkZW50aWZpZXI+CiAgICA8cmVsYXRlZElkZW50aWZpZXIgcmVsYXRlZElkZW50aWZpZXJUeXBlPSJVUkwiIHJlbGF0aW9uVHlwZT0iaXNTdXBwbGVtZW50ZWRCeSI+aHR0cHM6Ly9saW5rLnNwcmluZ2VyLmNvbS9hcnRpY2xlLzEwLjEwMDcvczExMjA3LTAyMS0wMTg0Ny05PC9yZWxhdGVkSWRlbnRpZmllcj4KICA8L3JlbGF0ZWRJZGVudGlmaWVycz4KICA8c2l6ZXMvPgogIDxmb3JtYXRzPgogICAgPGZvcm1hdD5GSVRTPC9mb3JtYXQ+CiAgPC9mb3JtYXRzPgogIDx2ZXJzaW9uLz4KICA8ZGVzY3JpcHRpb25zPgogICAgPGRlc2NyaXB0aW9uIHhtbDpsYW5nPSJlbiIgZGVzY3JpcHRpb25UeXBlPSJBYnN0cmFjdCI+QnJvd3NlIGltYWdlcyBjcmVhdGVkIHVzaW5nIHRoZSBMMyBkYXRhIHByb2R1Y3QuIFRoZXNlIGRhdGEgYXJlIHNlcGFyYXRlZCBieSBlbmNvdW50ZXIgYW5kIGJ5IGNhbWVyYSAoImlubmVyIiBhbmQgIm91dGVyIik8L2Rlc2NyaXB0aW9uPgogIDwvZGVzY3JpcHRpb25zPgogIDxnZW9Mb2NhdGlvbnM+CiAgICA8Z2VvTG9jYXRpb24+CiAgICAgIDxnZW9Mb2NhdGlvblBsYWNlPkhlbGlvc3BoZXJlLklubmVyPC9nZW9Mb2NhdGlvblBsYWNlPgogICAgPC9nZW9Mb2NhdGlvbj4KICAgIDxnZW9Mb2NhdGlvbj4KICAgICAgPGdlb0xvY2F0aW9uUGxhY2U+U3VuLkNvcm9uYTwvZ2VvTG9jYXRpb25QbGFjZT4KICAgIDwvZ2VvTG9jYXRpb24+CiAgPC9nZW9Mb2NhdGlvbnM+CjwvcmVzb3VyY2U+Cg==",
+         "url": "https://hpde.io/NASA/DisplayData/ParkerSolarProbe/WISPR/PNG/PT30M",
+         "contentUrl": null,
+         "metadataVersion": 1,
+         "schemaVersion": "http://datacite.org/schema/kernel-4",
+         "source": "api",
+         "isActive": false,
+         "state": "draft",
+         "reason": null,
+         "landingPage": null,
+         "viewCount": 0,
+         "viewsOverTime": [],
+         "downloadCount": 0,
+         "downloadsOverTime": [],
+         "referenceCount": 0,
+         "citationCount": 0,
+         "citationsOverTime": [],
+         "partCount": 0,
+         "partOfCount": 0,
+         "versionCount": 0,
+         "versionOfCount": 0,
+         "created": "2025-03-26T21:28:38.000Z",
+         "registered": null,
+         "published": "2025",
+         "updated": "2025-03-31T19:56:27.000Z"
+      },
+      "relationships": {
+         "media": {
+            "data": {
+               "id": "10.48322/yv4s-3d93",
+               "type": "media"
+            }
+         },
+         "references": {
+            "data": []
+         },
+         "citations": {
+            "data": []
+         },
+         "parts": {
+            "data": []
+         },
+         "partOf": {
+            "data": []
+         },
+         "versions": {
+            "data": []
+         },
+         "versionOf": {
+            "data": []
+         }
+      }
+   }
+}

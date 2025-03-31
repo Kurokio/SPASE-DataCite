@@ -1,0 +1,353 @@
+{
+   "data": {
+      "attributes": {
+         "alternateIdentifiers": [
+            {
+               "alternateIdentifier": "spase://NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
+               "alternateIdentifierType": "SPASE ResourceID"
+            },
+            {
+               "alternateIdentifier": "spase://VSPO/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
+               "alternateIdentifierType": "Prior SPASE ResourceID"
+            }
+         ],
+         "contributors": [
+            {
+               "contributorType": "Sponsor",
+               "name": "National Aeronautics and Space Administration",
+               "nameType": "Organizational"
+            },
+            {
+               "affiliation": {
+                  "name": "Magnetospheric Multiscale (MMS) Science Operations Center (SOC)"
+               },
+               "contributorType": "DataCurator",
+               "familyName": "",
+               "givenName": "MMS_SDC_POC",
+               "name": "MMS_SDC_POC ",
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "name": "Department of Earth, Planetary, and Space Sciences, University of California, Los Angeles"
+               },
+               "contributorType": "ContactPerson",
+               "familyName": "Bargatze",
+               "givenName": "Lee Frost.",
+               "name": "Lee Frost. Bargatze",
+               "nameType": "Personal"
+            }
+         ],
+         "creators": [
+            {
+               "affiliation": {
+                  "name": "Southwest Research Institute, also affiliated with the University of Texas at San Antonio"
+               },
+               "familyName": "Fuselier",
+               "givenName": "Stephen A.",
+               "name": "Fuselier, Stephen A.",
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "name": "Southwest Research Institute"
+               },
+               "familyName": "Young",
+               "givenName": "David T.",
+               "name": "Young, David T.",
+               "nameIdentifiers": {
+                  "nameIdentifier": "https://orcid.org/0000-0001-9473-7000",
+                  "nameIdentifierScheme": "ORCID",
+                  "schemeUri": "https://orcid.org"
+               },
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "name": "Southwest Research Institute"
+               },
+               "familyName": "Gomez",
+               "givenName": "Roman G.",
+               "name": "Gomez, Roman G.",
+               "nameIdentifiers": {
+                  "nameIdentifier": "https://orcid.org/0000-0001-7888-668X",
+                  "nameIdentifierScheme": "ORCID",
+                  "schemeUri": "https://orcid.org"
+               },
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "name": "Southwest Research Institute"
+               },
+               "familyName": "Burch",
+               "givenName": "James L.",
+               "name": "Burch, James L.",
+               "nameType": "Personal"
+            }
+         ],
+         "dates": [
+            {
+               "date": "2015-09-01T12:11:00/..",
+               "dateType": "Coverage"
+            },
+            {
+               "date": "PT0.625S",
+               "dateInformation": "Cadence of successive measurements",
+               "dateType": "Other"
+            }
+         ],
+         "descriptions": [
+            {
+               "description": "Hot Plasma Composition Analyzer (HPCA) Ions, Level 2, Burst Survey, 0.625 s Data. The MMS HPCA instruments measure the energy and composition of magnetospheric plasmas in the energy range from 1 eV to 40 keV. An electrostatic energy analyzer (ESA) that is optically coupled to a carbon-foil based Time-of-Flight (TOF) section comprises each HPCA. The basic HPCA data product is an array of counts for 5 ion species, at 63 energies, for each of 16 elevation anodes. Sixteen basic products, also called azimuths, are acquired every 0.625 s; half a spacecraft spin period nominally has 16 azimuths. The five ion species are protons (H+), alpha particles (He++), helium ions (He+), singly charged Oxygen (O+), and background counts.",
+               "descriptionType": "Abstract",
+               "lang": "en"
+            }
+         ],
+         "formats": [
+            "CDF",
+            "CSV"
+         ],
+         "geoLocations": [
+            {
+               "geoLocationPlace": "Earth.Magnetosheath"
+            },
+            {
+               "geoLocationPlace": "Earth.Magnetosphere"
+            },
+            {
+               "geoLocationPlace": "Earth.Magnetosphere.Magnetotail"
+            },
+            {
+               "geoLocationPlace": "Earth.Magnetosphere.Main"
+            },
+            {
+               "geoLocationPlace": "Earth.Magnetosphere.RadiationBelt"
+            },
+            {
+               "geoLocationPlace": "Earth.NearSurface.EquatorialRegion"
+            },
+            {
+               "geoLocationPlace": "Earth.NearSurface.Plasmasphere"
+            },
+            {
+               "geoLocationPlace": "Heliosphere.NearEarth"
+            }
+         ],
+         "language": "en",
+         "prefix": "10.48322",
+         "publicationYear": 2025,
+         "publisher": {
+            "name": "Space Physics Data Facility",
+            "publisherIdentifier": "https://ror.org/00ryjtt64",
+            "publisherIdentifierScheme": "ROR",
+            "schemeUri": "https://ror.org/"
+         },
+         "relatedIdentifiers": [
+            {
+               "relatedIdentifier": "https://mms.gsfc.nasa.gov/",
+               "relatedIdentifierType": "URL",
+               "relationType": "isSupplementedBy"
+            },
+            {
+               "relatedIdentifier": "https://lasp.colorado.edu/mms/sdc/public/datasets/hpca/",
+               "relatedIdentifierType": "URL",
+               "relationType": "isSupplementedBy"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/cb14-a164",
+               "relatedIdentifierType": "DOI",
+               "relationType": "isDerivedFrom",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/hx4p-3v35",
+               "relatedIdentifierType": "DOI",
+               "relationType": "isVersionOf",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/s9mg-he04",
+               "relatedIdentifierType": "DOI",
+               "relationType": "isPartOf",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/xhe6-5a16",
+               "relatedIdentifierType": "DOI",
+               "relationType": "References",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/2ry9-3s59",
+               "relatedIdentifierType": "DOI",
+               "relationType": "References",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://hpde.io/SMWG/Instrument/MMS/4/FIELDS/FGM",
+               "relatedIdentifierType": "URL",
+               "relationType": "isCollectedBy",
+               "resourceTypeGeneral": "Instrument"
+            },
+            {
+               "relatedIdentifier": "https://hpde.io/SMWG/Instrument/MMS/4/HotPlasmaCompositionAnalyzer",
+               "relatedIdentifierType": "URL",
+               "relationType": "isCollectedBy",
+               "resourceTypeGeneral": "Instrument"
+            },
+            {
+               "relatedIdentifier": "https://hpde.io/SMWG/Observatory/MMS",
+               "relatedIdentifierType": "URL",
+               "relationType": "isCollectedBy",
+               "resourceTypeGeneral": "Project"
+            },
+            {
+               "relatedIdentifier": "https://hpde.io/SMWG/Observatory/MMS/4",
+               "relatedIdentifierType": "URL",
+               "relationType": "isCollectedBy",
+               "resourceTypeGeneral": "Project"
+            }
+         ],
+         "rightsList": [
+            {
+               "lang": "en",
+               "rights": "Creative Commons Zero v1.0 Universal",
+               "rightsIdentifier": "CC0-1.0",
+               "rightsIdentifierScheme": "SPDX",
+               "rightsUri": "https://spdx.org/licenses/CC0-1.0.html",
+               "schemeUri": "https://spdx.org/licenses/"
+            }
+         ],
+         "subjects": [
+            {
+               "subject": "EnergeticParticles"
+            },
+            {
+               "subject": "MagneticField"
+            },
+            {
+               "subject": "MMS"
+            },
+            {
+               "subject": "Magnetic Reconnection"
+            },
+            {
+               "subject": "UTC converted from TAI time"
+            },
+            {
+               "subject": "Delta Start Time"
+            },
+            {
+               "subject": "Delta Stop Time"
+            },
+            {
+               "subject": "Polar Anode Number"
+            },
+            {
+               "subject": "Azimuth Decimation Factor"
+            },
+            {
+               "subject": "Polar Anode Decimation Factor"
+            },
+            {
+               "subject": "Energy Decimation Factor"
+            },
+            {
+               "subject": "Sweep Table Number"
+            },
+            {
+               "subject": "Start Azimuth"
+            },
+            {
+               "subject": "Science Mode Number"
+            },
+            {
+               "subject": "Electron Volts"
+            },
+            {
+               "subject": "Hydrogen+ Flux"
+            },
+            {
+               "subject": "Hydrogen+ Phase Space Density"
+            },
+            {
+               "subject": "Data Quality for Hydrogen+"
+            },
+            {
+               "subject": "Helium+ Flux"
+            },
+            {
+               "subject": "Helium+ Phase Space Density"
+            },
+            {
+               "subject": "Data Quality for Helium+"
+            },
+            {
+               "subject": "Helium++ Flux"
+            },
+            {
+               "subject": "Helium++ Phase Space Density"
+            },
+            {
+               "subject": "Data Quality for Helium++"
+            },
+            {
+               "subject": "Oxygen+ Flux"
+            },
+            {
+               "subject": "Oxygen+ Phase Space Density"
+            },
+            {
+               "subject": "Data Quality for Oxygen+"
+            },
+            {
+               "subject": "Magnetic Field Vector in DMPA plus Btotal (8 or 16 samples/s)"
+            },
+            {
+               "subject": "Magnetic Field Vector in GSM plus Btotal (8 or 16 samples/s)"
+            },
+            {
+               "subject": "UTC converted from TAI time"
+            },
+            {
+               "subject": "Delta Start Time for Azimuth Angles"
+            },
+            {
+               "subject": "Delta Stop Time for Azimuth Angles"
+            },
+            {
+               "subject": "Azimuth Angles in degrees"
+            },
+            {
+               "subject": "Azimuth Angle per eV in degrees"
+            },
+            {
+               "subject": "Center Elevation Angles"
+            },
+            {
+               "subject": "Azimuth Index"
+            },
+            {
+               "subject": "Energy Step Index"
+            }
+         ],
+         "titles": [
+            {
+               "lang": "en",
+               "title": "MMS 4 Hot Plasma Composition Analyzer (HPCA) Ions, Level 2 (L2), Burst Mode, 0.625 s Data"
+            },
+            {
+               "lang": "en",
+               "title": "MMS4_HPCA_BRST_L2_ION",
+               "titleType": "AlternativeTitle"
+            }
+         ],
+         "types": {
+            "resourceTypeGeneral": "Dataset"
+         },
+         "url": "https://hpde.io/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S"
+      },
+      "type": "dois"
+   }
+}

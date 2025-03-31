@@ -1,0 +1,169 @@
+{
+   "data": {
+      "id": "10.48322/6cfb-rq65",
+      "type": "dois",
+      "attributes": {
+         "doi": "10.48322/6cfb-rq65",
+         "prefix": "10.48322",
+         "suffix": "6cfb-rq65",
+         "identifiers": [
+               {
+                  "identifier": "spase://NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
+                  "identifierType": "SPASE"
+               }
+         ],
+         "alternateIdentifiers": [
+               {
+                  "alternateIdentifierType": "SPASE",
+                  "alternateIdentifier": "spase://NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S"
+               }
+         ],
+         "creators": [
+               {
+                  "name": "Fuselier, Stephen A.",
+                  "nameType": "Personal",
+                  "givenName": "Stephen A.",
+                  "familyName": "Fuselier",
+                  "affiliation": [
+                     "Southwest Research Institute"
+                  ],
+                  "nameIdentifiers": []
+               },
+               {
+                  "name": "Young, David T.",
+                  "nameType": "Personal",
+                  "givenName": "David T.",
+                  "familyName": "Young",
+                  "affiliation": [
+                     "Southwest Research Institute"
+                  ],
+                  "nameIdentifiers": []
+               },
+               {
+                  "name": "Gomez, Roman G.",
+                  "nameType": "Personal",
+                  "givenName": "Roman G.",
+                  "familyName": "Gomez",
+                  "affiliation": [
+                     "Southwest Research Institute"
+                  ],
+                  "nameIdentifiers": []
+               },
+               {
+                  "name": "Burch, James L.",
+                  "nameType": "Personal",
+                  "givenName": "James L.",
+                  "familyName": "Burch",
+                  "affiliation": [
+                     "Southwest Research Institute"
+                  ],
+                  "nameIdentifiers": []
+               }
+         ],
+         "titles": [
+               {
+                  "lang": "en",
+                  "title": "MMS 4 Hot Plasma Composition Analyzer (HPCA) Ions, Level 2 (L2), Burst Mode, 0.625 s Data",
+                  "titleType": null
+               }
+         ],
+         "publisher": "NASA Space Physics Data Facility",
+         "container": {},
+         "publicationYear": 2022,
+         "subjects": [
+               {
+                  "subject": "Calibrated"
+               },
+               {
+                  "subject": "EnergeticParticles"
+               },
+               {
+                  "subject": "MagneticField"
+               }
+         ],
+         "contributors": [],
+         "dates": [],
+         "language": "en",
+         "types": {
+               "ris": "DATA",
+               "bibtex": "misc",
+               "citeproc": "dataset",
+               "schemaOrg": "Dataset",
+               "resourceTypeGeneral": "Dataset"
+         },
+         "relatedIdentifiers": [],
+         "relatedItems": [],
+         "sizes": [],
+         "formats": [],
+         "version": null,
+         "rightsList": [
+               {
+                  "rights": "Creative Commons Zero v1.0 Universal",
+                  "rightsUri": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+                  "schemeUri": "https://spdx.org/licenses/",
+                  "rightsIdentifier": "cc0-1.0",
+                  "rightsIdentifierScheme": "SPDX"
+               }
+         ],
+         "descriptions": [
+               {
+                  "lang": "en",
+                  "description": "Hot Plasma Composition Analyzer (HPCA) Ions, Level 2, Burst Survey, 0.625 s Data. The MMS HPCA instruments measure the energy and composition of magnetospheric plasmas in the energy range from 1 eV to 40 keV. An electrostatic energy analyzer (ESA) that is optically coupled to a carbon-foil based Time-of-Flight (TOF) section comprises each HPCA. The basic HPCA data product is an array of counts for 5 ion species, at 63 energies, for each of 16 elevation anodes. Sixteen basic products, also called azimuths, are acquired every 0.625 s; half a spacecraft spin period nominally has 16 azimuths. The five ion species are protons (H+), alpha particles (He++), helium ions (He+), singly charged Oxygen (O+), and background counts.",
+                  "descriptionType": "Abstract"
+               }
+         ],
+         "geoLocations": [],
+         "fundingReferences": [],
+         "xml": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHJlc291cmNlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zPSJodHRwOi8vZGF0YWNpdGUub3JnL3NjaGVtYS9rZXJuZWwtNCIgeHNpOnNjaGVtYUxvY2F0aW9uPSJodHRwOi8vZGF0YWNpdGUub3JnL3NjaGVtYS9rZXJuZWwtNCBodHRwOi8vc2NoZW1hLmRhdGFjaXRlLm9yZy9tZXRhL2tlcm5lbC00L21ldGFkYXRhLnhzZCI+CiAgPGlkZW50aWZpZXIgaWRlbnRpZmllclR5cGU9IkRPSSI+MTAuNDgzMjIvNkNGQi1SUTY1PC9pZGVudGlmaWVyPgogIDxjcmVhdG9ycz4KICAgIDxjcmVhdG9yPgogICAgICA8Y3JlYXRvck5hbWUgbmFtZVR5cGU9IlBlcnNvbmFsIj5GdXNlbGllciwgU3RlcGhlbiBBLjwvY3JlYXRvck5hbWU+CiAgICAgIDxnaXZlbk5hbWU+U3RlcGhlbiBBLjwvZ2l2ZW5OYW1lPgogICAgICA8ZmFtaWx5TmFtZT5GdXNlbGllcjwvZmFtaWx5TmFtZT4KICAgICAgPGFmZmlsaWF0aW9uIGFmZmlsaWF0aW9uSWRlbnRpZmllcj0iaHR0cHM6Ly9yb3Iub3JnLzAzdGdobmc1OSIgYWZmaWxpYXRpb25JZGVudGlmaWVyU2NoZW1lPSJST1IiIHNjaGVtZVVSST0iaHR0cHM6Ly9yb3Iub3JnIj5Tb3V0aHdlc3QgUmVzZWFyY2ggSW5zdGl0dXRlPC9hZmZpbGlhdGlvbj4KICAgIDwvY3JlYXRvcj4KICAgIDxjcmVhdG9yPgogICAgICA8Y3JlYXRvck5hbWUgbmFtZVR5cGU9IlBlcnNvbmFsIj5Zb3VuZywgRGF2aWQgVC48L2NyZWF0b3JOYW1lPgogICAgICA8Z2l2ZW5OYW1lPkRhdmlkIFQuPC9naXZlbk5hbWU+CiAgICAgIDxmYW1pbHlOYW1lPllvdW5nPC9mYW1pbHlOYW1lPgogICAgICA8YWZmaWxpYXRpb24gYWZmaWxpYXRpb25JZGVudGlmaWVyPSJodHRwczovL3Jvci5vcmcvMDN0Z2huZzU5IiBhZmZpbGlhdGlvbklkZW50aWZpZXJTY2hlbWU9IlJPUiIgc2NoZW1lVVJJPSJodHRwczovL3Jvci5vcmciPlNvdXRod2VzdCBSZXNlYXJjaCBJbnN0aXR1dGU8L2FmZmlsaWF0aW9uPgogICAgPC9jcmVhdG9yPgogICAgPGNyZWF0b3I+CiAgICAgIDxjcmVhdG9yTmFtZSBuYW1lVHlwZT0iUGVyc29uYWwiPkdvbWV6LCBSb21hbiBHLjwvY3JlYXRvck5hbWU+CiAgICAgIDxnaXZlbk5hbWU+Um9tYW4gRy48L2dpdmVuTmFtZT4KICAgICAgPGZhbWlseU5hbWU+R29tZXo8L2ZhbWlseU5hbWU+CiAgICAgIDxhZmZpbGlhdGlvbiBhZmZpbGlhdGlvbklkZW50aWZpZXI9Imh0dHBzOi8vcm9yLm9yZy8wM3RnaG5nNTkiIGFmZmlsaWF0aW9uSWRlbnRpZmllclNjaGVtZT0iUk9SIiBzY2hlbWVVUkk9Imh0dHBzOi8vcm9yLm9yZyI+U291dGh3ZXN0IFJlc2VhcmNoIEluc3RpdHV0ZTwvYWZmaWxpYXRpb24+CiAgICA8L2NyZWF0b3I+CiAgICA8Y3JlYXRvcj4KICAgICAgPGNyZWF0b3JOYW1lIG5hbWVUeXBlPSJQZXJzb25hbCI+QnVyY2gsIEphbWVzIEwuPC9jcmVhdG9yTmFtZT4KICAgICAgPGdpdmVuTmFtZT5KYW1lcyBMLjwvZ2l2ZW5OYW1lPgogICAgICA8ZmFtaWx5TmFtZT5CdXJjaDwvZmFtaWx5TmFtZT4KICAgICAgPGFmZmlsaWF0aW9uIGFmZmlsaWF0aW9uSWRlbnRpZmllcj0iaHR0cHM6Ly9yb3Iub3JnLzAzdGdobmc1OSIgYWZmaWxpYXRpb25JZGVudGlmaWVyU2NoZW1lPSJST1IiIHNjaGVtZVVSST0iaHR0cHM6Ly9yb3Iub3JnIj5Tb3V0aHdlc3QgUmVzZWFyY2ggSW5zdGl0dXRlPC9hZmZpbGlhdGlvbj4KICAgIDwvY3JlYXRvcj4KICA8L2NyZWF0b3JzPgogIDx0aXRsZXM+CiAgICA8dGl0bGUgeG1sOmxhbmc9ImVuIj5NTVMgNCBIb3QgUGxhc21hIENvbXBvc2l0aW9uIEFuYWx5emVyIChIUENBKSBJb25zLCBMZXZlbCAyIChMMiksIEJ1cnN0IE1vZGUsIDAuNjI1IHMgRGF0YTwvdGl0bGU+CiAgPC90aXRsZXM+CiAgPHB1Ymxpc2hlcj5OQVNBIFNwYWNlIFBoeXNpY3MgRGF0YSBGYWNpbGl0eTwvcHVibGlzaGVyPgogIDxwdWJsaWNhdGlvblllYXI+MjAyMjwvcHVibGljYXRpb25ZZWFyPgogIDxyZXNvdXJjZVR5cGUgcmVzb3VyY2VUeXBlR2VuZXJhbD0iRGF0YXNldCI+RGF0YXNldDwvcmVzb3VyY2VUeXBlPgogIDxzdWJqZWN0cz4KICAgIDxzdWJqZWN0PkNhbGlicmF0ZWQ8L3N1YmplY3Q+CiAgICA8c3ViamVjdD5FbmVyZ2V0aWNQYXJ0aWNsZXM8L3N1YmplY3Q+CiAgICA8c3ViamVjdD5NYWduZXRpY0ZpZWxkPC9zdWJqZWN0PgogIDwvc3ViamVjdHM+CiAgPGxhbmd1YWdlPmVuPC9sYW5ndWFnZT4KICA8YWx0ZXJuYXRlSWRlbnRpZmllcnM+CiAgICA8YWx0ZXJuYXRlSWRlbnRpZmllciBhbHRlcm5hdGVJZGVudGlmaWVyVHlwZT0iU1BBU0UiPnNwYXNlOi8vTkFTQS9OdW1lcmljYWxEYXRhL01NUy80L0hvdFBsYXNtYUNvbXBvc2l0aW9uQW5hbHl6ZXIvQnVyc3QvTGV2ZWwyL0lvbi9QVDAuNjI1UzwvYWx0ZXJuYXRlSWRlbnRpZmllcj4KICA8L2FsdGVybmF0ZUlkZW50aWZpZXJzPgogIDxzaXplcy8+CiAgPGZvcm1hdHMvPgogIDx2ZXJzaW9uLz4KICA8cmlnaHRzTGlzdD4KICAgIDxyaWdodHMgcmlnaHRzVVJJPSJodHRwczovL2NyZWF0aXZlY29tbW9ucy5vcmcvcHVibGljZG9tYWluL3plcm8vMS4wL2xlZ2FsY29kZSIgcmlnaHRzSWRlbnRpZmllcj0iY2MwLTEuMCIgcmlnaHRzSWRlbnRpZmllclNjaGVtZT0iU1BEWCIgc2NoZW1lVVJJPSJodHRwczovL3NwZHgub3JnL2xpY2Vuc2VzLyI+Q3JlYXRpdmUgQ29tbW9ucyBaZXJvIHYxLjAgVW5pdmVyc2FsPC9yaWdodHM+CiAgPC9yaWdodHNMaXN0PgogIDxkZXNjcmlwdGlvbnM+CiAgICA8ZGVzY3JpcHRpb24geG1sOmxhbmc9ImVuIiBkZXNjcmlwdGlvblR5cGU9IkFic3RyYWN0Ij5Ib3QgUGxhc21hIENvbXBvc2l0aW9uIEFuYWx5emVyIChIUENBKSBJb25zLCBMZXZlbCAyLCBCdXJzdCBTdXJ2ZXksIDAuNjI1IHMgRGF0YS4gVGhlIE1NUyBIUENBIGluc3RydW1lbnRzIG1lYXN1cmUgdGhlIGVuZXJneSBhbmQgY29tcG9zaXRpb24gb2YgbWFnbmV0b3NwaGVyaWMgcGxhc21hcyBpbiB0aGUgZW5lcmd5IHJhbmdlIGZyb20gMSBlViB0byA0MCBrZVYuIEFuIGVsZWN0cm9zdGF0aWMgZW5lcmd5IGFuYWx5emVyIChFU0EpIHRoYXQgaXMgb3B0aWNhbGx5IGNvdXBsZWQgdG8gYSBjYXJib24tZm9pbCBiYXNlZCBUaW1lLW9mLUZsaWdodCAoVE9GKSBzZWN0aW9uIGNvbXByaXNlcyBlYWNoIEhQQ0EuIFRoZSBiYXNpYyBIUENBIGRhdGEgcHJvZHVjdCBpcyBhbiBhcnJheSBvZiBjb3VudHMgZm9yIDUgaW9uIHNwZWNpZXMsIGF0IDYzIGVuZXJnaWVzLCBmb3IgZWFjaCBvZiAxNiBlbGV2YXRpb24gYW5vZGVzLiBTaXh0ZWVuIGJhc2ljIHByb2R1Y3RzLCBhbHNvIGNhbGxlZCBhemltdXRocywgYXJlIGFjcXVpcmVkIGV2ZXJ5IDAuNjI1IHM7IGhhbGYgYSBzcGFjZWNyYWZ0IHNwaW4gcGVyaW9kIG5vbWluYWxseSBoYXMgMTYgYXppbXV0aHMuIFRoZSBmaXZlIGlvbiBzcGVjaWVzIGFyZSBwcm90b25zIChIKyksIGFscGhhIHBhcnRpY2xlcyAoSGUrKyksIGhlbGl1bSBpb25zIChIZSspLCBzaW5nbHkgY2hhcmdlZCBPeHlnZW4gKE8rKSwgYW5kIGJhY2tncm91bmQgY291bnRzLjwvZGVzY3JpcHRpb24+CiAgPC9kZXNjcmlwdGlvbnM+CjwvcmVzb3VyY2U+Cg==",
+         "url": "https://hpde.io/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S.html",
+         "contentUrl": null,
+         "metadataVersion": 2,
+         "schemaVersion": "http://datacite.org/schema/kernel-4",
+         "source": "api",
+         "isActive": true,
+         "state": "findable",
+         "reason": null,
+         "viewCount": 0,
+         "viewsOverTime": [],
+         "downloadCount": 0,
+         "downloadsOverTime": [],
+         "referenceCount": 0,
+         "citationCount": 0,
+         "citationsOverTime": [],
+         "partCount": 0,
+         "partOfCount": 0,
+         "versionCount": 0,
+         "versionOfCount": 0,
+         "created": "2022-08-02T07:46:59.000Z",
+         "registered": "2022-08-03T07:01:29.000Z",
+         "published": "2022",
+         "updated": "2025-02-24T05:52:53.000Z"
+      },
+      "relationships": {
+         "media": {
+               "data": {
+                  "id": "10.48322/6cfb-rq65",
+                  "type": "media"
+               }
+         },
+         "references": {
+               "data": []
+         },
+         "citations": {
+               "data": []
+         },
+         "parts": {
+               "data": []
+         },
+         "partOf": {
+               "data": []
+         },
+         "versions": {
+               "data": []
+         },
+         "versionOf": {
+               "data": []
+         }
+      }
+   }
+}
