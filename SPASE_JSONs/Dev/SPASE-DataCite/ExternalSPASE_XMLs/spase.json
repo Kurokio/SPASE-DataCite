@@ -1,0 +1,350 @@
+{
+   "data": {
+      "attributes": {
+         "alternateIdentifiers": [
+            {
+               "alternateIdentifier": "spase://NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
+               "alternateIdentifierType": "SPASE ResourceID"
+            },
+            {
+               "alternateIdentifier": "spase://VSPO/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
+               "alternateIdentifierType": "Prior SPASE ResourceID"
+            }
+         ],
+         "contributors": [
+            {
+               "affiliation": {
+                  "affiliationIdentifier": "https://ror.org/036jqmy94",
+                  "affiliationIdentifierScheme": "ROR",
+                  "name": "University of Iowa",
+                  "schemeUri": "https://ror.org/"
+               },
+               "contributorType": "ProjectLeader",
+               "familyName": "Pickett",
+               "givenName": "Jolene S.",
+               "name": "Jolene S. Pickett",
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "name": "Magnetospheric Multiscale (MMS) Science Operations Center (SOC)"
+               },
+               "contributorType": "ContactPerson",
+               "name": "MMS_SDC_POC",
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "affiliationIdentifier": "https://ror.org/0171mag52",
+                  "affiliationIdentifierScheme": "ROR",
+                  "name": "NASA Goddard Space Flight Center",
+                  "schemeUri": "https://ror.org/"
+               },
+               "contributorType": "ContactPerson",
+               "familyName": "Candey",
+               "givenName": "Robert M.",
+               "name": "Robert M. Candey",
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "name": "Department of Earth, Planetary, and Space Sciences, University of California, Los Angeles"
+               },
+               "contributorType": "ContactPerson",
+               "familyName": "Bargatze",
+               "givenName": "Lee F.",
+               "name": "Lee F. Bargatze",
+               "nameType": "Personal"
+            }
+         ],
+         "creators": [
+            {
+               "affiliation": {
+                  "name": "Southwest Research Institute, also affiliated with the University of Texas at San Antonio"
+               },
+               "familyName": "Fuselier",
+               "givenName": "Stephen A.",
+               "name": "Fuselier, Stephen A.",
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "affiliationIdentifier": "https://ror.org/03tghng59",
+                  "affiliationIdentifierScheme": "ROR",
+                  "name": "Southwest Research Institute",
+                  "schemeUri": "https://ror.org/"
+               },
+               "familyName": "Young",
+               "givenName": "David T.",
+               "name": "Young, David T.",
+               "nameIdentifiers": {
+                  "nameIdentifier": "https://orcid.org/0000-0001-9473-7000",
+                  "nameIdentifierScheme": "ORCID",
+                  "schemeUri": "https://orcid.org"
+               },
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "name": "Southwest Research Institute"
+               },
+               "familyName": "Gomez",
+               "givenName": "Roman G.",
+               "name": "Gomez, Roman G.",
+               "nameIdentifiers": {
+                  "nameIdentifier": "https://orcid.org/0000-0001-7888-668X",
+                  "nameIdentifierScheme": "ORCID",
+                  "schemeUri": "https://orcid.org"
+               },
+               "nameType": "Personal"
+            },
+            {
+               "affiliation": {
+                  "affiliationIdentifier": "https://ror.org/03tghng59",
+                  "affiliationIdentifierScheme": "ROR",
+                  "name": "Southwest Research Institute",
+                  "schemeUri": "https://ror.org/"
+               },
+               "familyName": "Burch",
+               "givenName": "James L.",
+               "name": "Burch, James L.",
+               "nameType": "Personal"
+            }
+         ],
+         "dates": [
+            {
+               "date": "2015-09-01T12:11:00/..",
+               "dateType": "Coverage"
+            }
+         ],
+         "descriptions": [
+            {
+               "description": "Hot Plasma Composition Analyzer (HPCA) Ions, Level 2, Burst Survey, 0.625 s Data. The MMS HPCA instruments measure the energy and composition of magnetospheric plasmas in the energy range from 1 eV to 40 keV. An electrostatic energy analyzer (ESA) that is optically coupled to a carbon-foil based Time-of-Flight (TOF) section comprises each HPCA. The basic HPCA data product is an array of counts for 5 ion species, at 63 energies, for each of 16 elevation anodes. Sixteen basic products, also called azimuths, are acquired every 0.625 s; half a spacecraft spin period nominally has 16 azimuths. The five ion species are protons (H+), alpha particles (He++), helium ions (He+), singly charged Oxygen (O+), and background counts.",
+               "descriptionType": "Abstract",
+               "lang": "en"
+            }
+         ],
+         "formats": [
+            "CDF",
+            "CSV"
+         ],
+         "fundingReferences": [
+            {
+               "awardNumber": "NNG19PQ28C",
+               "awardTitle": "Explorer Program",
+               "funderName": "National Aeronautics and Space Administration"
+            }
+         ],
+         "geoLocations": [
+            {
+               "geoLocationPlace": "Earth Magnetosheath"
+            },
+            {
+               "geoLocationPlace": "Earth Magnetosphere"
+            },
+            {
+               "geoLocationPlace": "Earth Magnetosphere Magnetotail"
+            },
+            {
+               "geoLocationPlace": "Earth Magnetosphere Main"
+            },
+            {
+               "geoLocationPlace": "Earth Magnetosphere RadiationBelt"
+            },
+            {
+               "geoLocationPlace": "Earth NearSurface EquatorialRegion"
+            },
+            {
+               "geoLocationPlace": "Earth NearSurface Plasmasphere"
+            },
+            {
+               "geoLocationPlace": "Heliosphere NearEarth"
+            }
+         ],
+         "language": "en",
+         "prefix": "10.48322",
+         "publicationYear": 2022,
+         "publisher": {
+            "name": "Space Physics Data Facility"
+         },
+         "relatedIdentifiers": [
+            {
+               "relatedIdentifier": "https://mms.gsfc.nasa.gov/",
+               "relatedIdentifierType": "URL",
+               "relationType": "References",
+               "resourceTypeGeneral": "Other/website"
+            },
+            {
+               "relatedIdentifier": "https://lasp.colorado.edu/mms/sdc/public/datasets/hpca/",
+               "relatedIdentifierType": "URL",
+               "relationType": "References",
+               "resourceTypeGeneral": "Other/website"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/cb14-a164",
+               "relatedIdentifierType": "DOI",
+               "relationType": "IsDerivedFrom",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/hx4p-3v35",
+               "relatedIdentifierType": "DOI",
+               "relationType": "IsNewVersionOf",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/s9mg-he04",
+               "relatedIdentifierType": "DOI",
+               "relationType": "IsPartOf",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/xhe6-5a16",
+               "relatedIdentifierType": "DOI",
+               "relationType": "References",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://doi.org/10.48322/2ry9-3s59",
+               "relatedIdentifierType": "DOI",
+               "relationType": "References",
+               "resourceTypeGeneral": "Dataset"
+            },
+            {
+               "relatedIdentifier": "https://hpde.io/SMWG/Instrument/MMS/4/FIELDS/FGM",
+               "relatedIdentifierType": "URL",
+               "relationType": "IsCollectedBy",
+               "resourceTypeGeneral": "Instrument"
+            },
+            {
+               "relatedIdentifier": "https://hpde.io/SMWG/Instrument/MMS/4/HotPlasmaCompositionAnalyzer",
+               "relatedIdentifierType": "URL",
+               "relationType": "IsCollectedBy",
+               "resourceTypeGeneral": "Instrument"
+            },
+            {
+               "relatedIdentifier": "https://hpde.io/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
+               "relatedIdentifierType": "URL",
+               "relatedMetadataScheme": "SPASE",
+               "relationType": "HasMetadata",
+               "schemeType": "xsd",
+               "schemeURI": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm"
+            }
+         ],
+         "rightsList": [
+            {
+               "lang": "en",
+               "rights": "Creative Commons Zero v1.0 Universal",
+               "rightsIdentifier": "CC0-1.0",
+               "rightsIdentifierScheme": "SPDX",
+               "rightsUri": "https://spdx.org/licenses/CC0-1.0.html",
+               "schemeUri": "https://spdx.org/licenses/"
+            }
+         ],
+         "subjects": [
+            {
+               "subject": "MMS"
+            },
+            {
+               "subject": "Magnetic Reconnection"
+            },
+            {
+               "classificationCode": "EnergeticParticles",
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#MeasurementType",
+               "subject": "Energetic Particles",
+               "subjectScheme": "SPASE MeasurementType"
+            },
+            {
+               "classificationCode": "MagneticField",
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#MeasurementType",
+               "subject": "Magnetic Field",
+               "subjectScheme": "SPASE MeasurementType"
+            },
+            {
+               "classificationCode": "Earth.Magnetosheath",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
+                  "@type": "DefinedTermSet",
+                  "name": "SPASE Region",
+                  "url": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Earth Magnetosheath",
+               "subjectScheme": "SPASE ObservedRegion"
+            },
+            {
+               "classificationCode": "Earth.Magnetosphere",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Earth Magnetosphere",
+               "subjectScheme": "SPASE ObservedRegion"
+            },
+            {
+               "classificationCode": "Earth.Magnetosphere.Magnetotail",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Earth Magnetosphere Magnetotail",
+               "subjectScheme": "SPASE ObservedRegion"
+            },
+            {
+               "classificationCode": "Earth.Magnetosphere.Main",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Earth Magnetosphere Main",
+               "subjectScheme": "SPASE ObservedRegion"
+            },
+            {
+               "classificationCode": "Earth.Magnetosphere.RadiationBelt",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Earth Magnetosphere RadiationBelt",
+               "subjectScheme": "SPASE ObservedRegion"
+            },
+            {
+               "classificationCode": "Earth.NearSurface.EquatorialRegion",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Earth NearSurface EquatorialRegion",
+               "subjectScheme": "SPASE ObservedRegion"
+            },
+            {
+               "classificationCode": "Earth.NearSurface.Plasmasphere",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Earth NearSurface Plasmasphere",
+               "subjectScheme": "SPASE ObservedRegion"
+            },
+            {
+               "classificationCode": "Heliosphere.NearEarth",
+               "schemeUri": {
+                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
+               },
+               "subject": "Heliosphere NearEarth",
+               "subjectScheme": "SPASE ObservedRegion"
+            }
+         ],
+         "titles": [
+            {
+               "lang": "en",
+               "title": "MMS 4 Hot Plasma Composition Analyzer (HPCA) Ions, Level 2 (L2), Burst Mode, 0.625 s Data"
+            },
+            {
+               "lang": "en",
+               "title": "MMS4_HPCA_BRST_L2_ION",
+               "titleType": "AlternativeTitle"
+            }
+         ],
+         "types": {
+            "resourceType": "NumericalData",
+            "resourceTypeGeneral": "Dataset"
+         },
+         "url": "https://hpde.io/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S"
+      },
+      "type": "dois"
+   }
+}

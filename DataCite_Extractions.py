@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import json
 import os
 import requests
+from pathlib import Path
+import copy
 
 class SPASE():
     """Define the conversion strategy for SPASE (Space Physics Archive Search
@@ -41,9 +43,7 @@ class SPASE():
     def get_id(self) -> str:
         # Mapping: schema:identifier = hpde.io landing page for the SPASE record
         ResourceID = get_ResourceID(self.metadata, self.namespaces)
-        before, sep, after = ResourceID.partition("/NASA")
-        #before, sep, after = ResourceID.partition("/SMWG")
-        hpdeURL = f"https://hpde.io{sep}{after}"
+        hpdeURL = ResourceID.replace("spase://", "https://hpde.io/")
 
         return hpdeURL
 
@@ -76,11 +76,7 @@ class SPASE():
             namespaces=self.namespaces,
         )
         if url is None:
-            desiredTag = self.desiredRoot.tag.split("}")
-            SPASE_Location = ".//spase:" + f"{desiredTag[1]}/spase:ResourceID"
-            url = self.metadata.findtext(
-                SPASE_Location, namespaces=self.namespaces
-            ).replace("spase://", "https://hpde.io/")
+            url = self.get_id()
         return url
 
     def get_same_as(self) -> Union[List, None]:
@@ -125,17 +121,19 @@ class SPASE():
         #    is_accessible_for_free = False
         return is_accessible_for_free
 
-    def get_keywords(self) -> Union[List, None]:
+    def get_keywords(self) -> Union[Dict, None]:
         # Mapping: schema:keywords = spase:Keyword AND spase:MeasurementType
-        keywords = []
+        keywords = {}
+        keywords["keywords"] = []
+        keywords["measurementTypes"] = []
 
         # traverse xml to extract needed info
         for child in self.desiredRoot.iter(tag=etree.Element):
             if child.tag.endswith("Keyword"):
-                keywords.append(child.text)
+                keywords["keywords"].append(child.text)
             elif child.tag.endswith("MeasurementType"):
-                keywords.append(child.text)
-        if keywords == []:
+                keywords["measurementTypes"].append(child.text)
+        if (keywords["keywords"] == []) and (keywords["measurementTypes"] == []):
             keywords = None
         return keywords
 
@@ -262,28 +260,69 @@ class SPASE():
         # Following type:DataDownload found at: https://schema.org/DataDownload
         date_modified = self.get_date_modified()
         metadata_license = get_metadata_license(self.metadata)
-        contentURL = self.get_id()
-        if date_modified:
-            subject_of = {
-                    "@id": contentURL,
-                    "@type": "DataDownload",
-                    "name": "SPASE metadata for dataset",
-                    "description": "SPASE metadata describing the dataset",
-                    "license": metadata_license,
-                    "encodingFormat": "application/xml",
-                    "contentUrl": contentURL,
-                    "dateModified": date_modified,
-                }
+        content_url = self.get_id()
+        doi = False
+        if "doi" in content_url:
+            doi = True
+            resource_id = get_ResourceID(self.metadata, self.namespaces)
+            content_url = resource_id.replace("spase://", "https://hpde.io/")
+        # small lookup table for commonly used licenses in SPASE
+        #   (CC0 for NASA, CC-BY-NC-3.0 for ESA, etc)
+        common_licenses = [
+            {
+                "fullName": "Creative Commons Zero v1.0 Universal",
+                "identifier": "CC0-1.0",
+                "url": "https://spdx.org/licenses/CC0-1.0.html",
+            },
+            {
+                "fullName": "Creative Commons Attribution Non Commercial 3.0 Unported",
+                "identifier": "CC-BY-NC-3.0",
+                "url": "https://spdx.org/licenses/CC-BY-NC-3.0.html",
+            },
+            {
+                "fullName": "Creative Commons Attribution 1.0 Generic",
+                "identifier": "CC-BY-1.0",
+                "url": "https://spdx.org/licenses/CC-BY-1.0.html",
+            },
+        ]
+
+        if content_url:
+            # basic format for item
+            entry = {
+                "@type": "DataDownload",
+                "name": "SPASE metadata for dataset",
+                "description": "The SPASE metadata describing the indicated dataset.",
+                "encodingFormat": "application/xml",
+                "contentUrl": content_url,
+                "identifier": content_url,
+            }
+            # if hpde.io landing page not used as top-level @id, include here as @id
+            if doi:
+                entry["@id"] = content_url
+            if metadata_license:
+                # find URL associated w license found in top-level SPASE line
+                license_url = ""
+                for entry in common_licenses:
+                    if entry["fullName"] == metadata_license:
+                        license_url = entry["url"]
+                # if license is not in lookup table
+                if not license_url:
+                    # find license info from SPDX data file at
+                    #   https://github.com/spdx/license-list-data/tree/main
+                    #   and add to common_licenses dictionary OR provide the
+                    #   fullName, identifier, and URL (in that order) as arguments
+                    #   to the conversion function. Then rerun script for those that failed.
+                    pass
+                else:
+                    entry["license"] = license_url
+
+                # if date modified is available, add it
+                if date_modified:
+                    entry["dateModified"] = date_modified
+
+            subject_of = entry
         else:
-            subject_of = {
-                    "@id": contentURL,
-                    "@type": "DataDownload",
-                    "name": "SPASE metadata for dataset",
-                    "description": "SPASE metadata describing the dataset",
-                    "license": metadata_license,
-                    "encodingFormat": "application/xml",
-                    "contentUrl": contentURL
-                }
+            subject_of = None
         return subject_of
 
     def get_distribution(self) -> Union[List[Dict], None]:
@@ -483,7 +522,7 @@ class SPASE():
         # Mapping: schema:datePublished = spase:ResourceHeader/spase:PublicationInfo/spase:PublicationDate
         # OR spase:ResourceHeader/spase:RevisionHistory/spase:ReleaseDate
         # Using schema:DateTime as defined in: https://schema.org/DateTime        
-        author, authorRole, pubDate, publisher, contributor, dataset, backups, contactsList = get_authors(self.metadata)
+        author, authorRole, pubDate, publisher, dataset, backups, contactsList = get_authors(self.metadata)
         date_published = None
         release, revisions = get_dates(self.metadata)
         if pubDate == "":
@@ -533,42 +572,69 @@ class SPASE():
             temporal_coverage = None
         return temporal_coverage
 
-    def get_spatial_coverage(self) -> Union[List, None]:
+    def get_spatial_coverage(self) -> Union[List[Dict], None]:
         # Mapping: schema:spatial_coverage = list of spase:NumericalData/spase:ObservedRegion
-        # Each object is:
-        #   {"@type": schema:Place, "alternateName": ObservedRegion (removed: "@id": URI)}
-        # Using URIs, as defined in: https://github.com/polyneme/topst-spase-rdf-tools/blob/main/data/spase.owl
         spatial_coverage = []
-        desiredTag = self.desiredRoot.tag.split("}")
-        SPASE_Location = ".//spase:" + f"{desiredTag[1]}/spase:ObservedRegion"
-        for item in self.metadata.findall(
-            SPASE_Location,
-            namespaces=self.namespaces,
-        ):
-            spatial_coverage.append(item.text)
+        desired_tag = self.desiredRoot.tag.split("}")
+        spase_location = ".//spase:" + f"{desired_tag[1]}/spase:ObservedRegion"
+        all_regions = self.metadata.findall(spase_location, namespaces=self.namespaces)
+        for item in all_regions:
+            # Split string on '.'
+            pretty_name = item.text.replace(".", " ")
+
+            # most basic entry for spatialCoverage
+            entry = {
+                "@type": "Place",
+                "keywords": {
+                    "@type": "DefinedTerm",
+                    "inDefinedTermSet": {
+                        "@id": "https://spase-group.org/data/"
+                        + "model/spase-latest/spase-latest_xsd.htm#Region"
+                    },
+                    "termCode": item.text,
+                },
+                "name": pretty_name,
+            }
+
+            # if this is the first item added, add additional info for DefinedTermSet
+            if all_regions.index(item) == 0:
+                entry["keywords"]["inDefinedTermSet"]["@type"] = "DefinedTermSet"
+                entry["keywords"]["inDefinedTermSet"]["name"] = "SPASE Region"
+                entry["keywords"]["inDefinedTermSet"]["url"] = (
+                    "https://spase-group.org/data/model/spase-latest"
+                    "/spase-latest_xsd.htm#Region"
+                )
+            spatial_coverage.append(entry)
+
         if len(spatial_coverage) == 0:
             spatial_coverage = None
         return spatial_coverage
 
     def get_creator(self) -> Union[List[Dict], None]:
-        # Mapping: schema:creator = spase:ResourceHeader/spase:PublicationInfo/spase:Authors 
+        # Mapping: schema:creator = spase:ResourceHeader/spase:PublicationInfo/spase:Authors
         # OR schema:creator = spase:ResourceHeader/spase:Contact/spase:PersonID
         # Each item is:
-        #   {@type: Role, roleName: Contact Role, creator: {@type: Person, name: Author Name, givenName: First Name, familyName: Last Name}}
+        #   {@type: Role, roleName: Contact Role, creator:
+        #   {@type: Person, name: Author Name, givenName:
+        #   First Name, familyName: Last Name}}
         #   plus the additional properties if available: affiliation and identifier (ORCiD ID),
-        #       which are pulled from SMWG Person SPASE records and ROR API
+        #       which are pulled from SMWG Person SPASE records
         # Using schema:Creator as defined in: https://schema.org/creator
-        author, authorRole, pubDate, pub, contributor, dataset, backups, contactsList = get_authors(self.metadata)
-        authorStr = str(author).replace("[", "").replace("]","")
+        (
+            author,
+            author_role,
+            *_,
+            contacts_list,
+        ) = get_authors(self.metadata)
+        author_str = str(author).replace("[", "").replace("]", "")
         creator = []
         multiple = False
-        matchingContact = False
-        ror = None
+        matching_contact = False
         if author:
             # if creators were found in Contact/PersonID
-            if "Person/" in authorStr:
+            if "Person/" in author_str:
                 # if multiple found, split them and iterate thru one by one
-                if "'," in authorStr:
+                if "'," in author_str:
                     multiple = True
                 for person in author:
                     if multiple:
@@ -577,53 +643,100 @@ class SPASE():
                     else:
                         index = 0
                     # split text from Contact into properly formatted name fields
-                    authorStr, givenName, familyName = nameSplitter(person)
-                    orcidID, affiliation, ror = get_ORCiD_and_Affiliation(person, self.file)
-                    #if ror == "":
-                        #ror = get_ROR(affiliation)
+                    author_str, given_name, family_name = name_splitter(person)
+                    # get additional info if any
+                    orcid_id, affiliation, ror = get_ORCiD_and_Affiliation(
+                        person
+                    )
                     # create the dictionary entry for that person and append to list
-                    creatorEntry = creatorFormat(authorRole[index], authorStr, givenName, familyName, affiliation, orcidID, ror)
-                    creator.append(creatorEntry)
-            # if all creators were found in PublicationInfo/Authors
+                    creator_entry = person_format(
+                        "creator",
+                        author_role[index],
+                        author_str,
+                        given_name,
+                        family_name,
+                        affiliation,
+                        orcid_id,
+                        ror
+                    )
+                    creator.append(creator_entry)
+            # if creators were found in PublicationInfo/Authors
             else:
                 # if there are multiple authors
                 if len(author) > 1:
                     # get rid of extra quotations
                     for num, each in enumerate(author):
-                        if "\'" in each:
-                            author[num] = each.replace("\'","")
+                        if "'" in each:
+                            author[num] = each.replace("'", "")
                     # iterate over each person in author string
                     for person in author:
+                        matching_contact = False
                         index = author.index(person)
-                        familyName, sep, givenName = person.partition(", ")
-                        # find matching person in contacts, if any, to retrieve affiliation and ORCiD
-                        for key, val in contactsList.items():
-                            if person == val:
-                                matchingContact = True
-                                orcidID, affiliation, ror = get_ORCiD_and_Affiliation(key, self.file)
-                                #if ror == "":
-                                    #ror = get_ROR(affiliation)
-                                creatorEntry = creatorFormat(authorRole[index], person, givenName, familyName, affiliation, orcidID, ror)
-                        if not matchingContact:
-                            creatorEntry = creatorFormat(authorRole[index], person, givenName, familyName)
-                        creator.append(creatorEntry)
+                        family_name, _, given_name = person.partition(", ")
+                        # find matching person in contacts, if any, to retrieve
+                        #   affiliation and ORCiD
+                        for key, val in contacts_list.items():
+                            if (not matching_contact) and (person == val):
+                                matching_contact = True
+                                orcid_id, affiliation, ror = (
+                                    get_ORCiD_and_Affiliation(key)
+                                    )
+                                creator_entry = person_format(
+                                    "creator",
+                                    author_role[index],
+                                    person,
+                                    given_name,
+                                    family_name,
+                                    affiliation,
+                                    orcid_id,
+                                    ror,
+                                )
+                        if not matching_contact:
+                            creator_entry = person_format(
+                                "creator",
+                                author_role[index],
+                                person,
+                                given_name,
+                                family_name,
+                            )
+                        creator.append(creator_entry)
                 # if there is only one author listed
                 else:
                     # get rid of extra quotations
-                    person = authorStr.replace("\"","")
-                    familyName, sep, givenName = person.partition(",")
-                    # find matching person in contacts, if any, to retrieve affiliation and ORCiD
-                    for key, val in contactsList.items():
-                        if person == val:
-                            matchingContact = True
-                            orcidID, affiliation, ror = get_ORCiD_and_Affiliation(key, self.file)
-                            #if ror == "":
-                                #ror = get_ROR(affiliation)
-                            creatorEntry = creatorFormat(authorRole[0], person, givenName, familyName, affiliation, orcidID, ror)
-                    if not matchingContact:
-                        creatorEntry = creatorFormat(authorRole[0], person, givenName, familyName)
-                    creator.append(creatorEntry)
-        else:
+                    person = author_str.replace('"', "")
+                    person = author_str.replace("'", "")
+                    if ", " in person:
+                        family_name, _, given_name = person.partition(",")
+                        # find matching person in contacts, if any, to retrieve affiliation and ORCiD
+                        for key, val in contacts_list.items():
+                            if not matching_contact:
+                                if person == val:
+                                    matching_contact = True
+                                    orcid_id, affiliation, ror = get_ORCiD_and_Affiliation(
+                                        key)
+                                    creator_entry = person_format(
+                                        "creator",
+                                        author_role[0],
+                                        person,
+                                        given_name,
+                                        family_name,
+                                        affiliation,
+                                        orcid_id,
+                                        ror,
+                                    )
+                        if not matching_contact:
+                            creator_entry = person_format(
+                                "creator", author_role[0], person, given_name, family_name
+                            )
+                        creator.append(creator_entry)
+                    # no comma = organization = no givenName and familyName
+                    else:
+                        creator_entry = person_format(
+                                "creator", author_role[0], person, "", ""
+                            )
+                        creator.append(creator_entry)
+        # preserve order of elements
+        if len(creator) == 0:
             creator = None
         return creator
 
@@ -634,81 +747,68 @@ class SPASE():
         #   plus the additional properties if available: affiliation and identifier (ORCiD ID),
         #       which are pulled from SMWG Person SPASE records and ROR API
         # Using schema:Person as defined in: https://schema.org/Person
-        author, authorRole, pubDate, pub, contributors, dataset, backups, contactsList = get_authors(self.metadata)
+        author, authorRole, pubDate, pub, dataset, backups, contactsList = get_authors(self.metadata)
         contributor = []
-        curators = {}
-        contactPoints = {}
         ror = None
-        # holds role values that are not initially considered for contributor var
-        CuratorRoles = ["HostContact", "GeneralContact", "DataProducer", "MetadataContact", "TechnicalContact"]
-        ContactPointRoles = ["DataProducer", "GeneralContact", "MetadataContact", "PrincipleInvestigator"]
+        first_contrib = True
+        DC_Roles = {}
+        role = "ProjectLeader"
+        # contributor prioritization (descending)
+        DC_Roles["ContactPerson"] = ["GeneralContact", "HostContact", "MetadataContact", "TechnicalContact"]
+        DC_Roles["DataCurator"] = ["ArchiveSpecialist"]
+        DC_Roles["ProjectLeader"] = ["TeamLeader"]
+        DC_Roles["ProjectManager"] = ["InstrumentLead", "MissionManager", "ProgramManager", "ProjectManager"]
+        DC_Roles["DataCollector"] = ["DataProducer"]
+        DC_Roles["ProjectMember"] = ["Contributor", "Developer", "InstrumentScientist", "ProgramScientist",
+                            "ProjectEngineer", "ProjectScientist", "Scientist", "TeamMember"]
 
         # Step 1: check for ppl w author roles that were not found in PubInfo
         for key, val in contactsList.items():
+            if contributor:
+                first_contrib = False
+            # why .? (not all names will have a period?) Is this even needed?
             if "." not in val:
                 # add call to get ORCiD and affiliation
-                contributorStr, givenName, familyName = nameSplitter(key)
-                orcidID, affiliation, ror = get_ORCiD_and_Affiliation(key, self.file)
+                contributorStr, givenName, familyName = name_splitter(key)
+                orcidID, affiliation, ror = get_ORCiD_and_Affiliation(key)
                 #if ror == "":
                     #ror = get_ROR(affiliation)
+                # if person has more than one author role
                 if len(contactsList[key]) > 1:
-                    individual = contributorFormat(contactsList[key], contributorStr, givenName, familyName, affiliation, orcidID, ror)
+                    if "CoInvestigator" in contactsList[key]:
+                        role = "ProjectMember"
+                    individual = person_format("contributor",
+                        role,
+                        contributorStr,
+                        givenName,
+                        familyName,
+                        affiliation,
+                        orcidID,
+                        ror,
+                        first_contrib)
                 else:
-                    individual = contributorFormat(contactsList[key][0], contributorStr, givenName, familyName, affiliation, orcidID, ror)
+                    if contactsList[key][0] == "CoInvestigator":
+                        role = "ProjectMember"
+                    individual = person_format("contributor",
+                        role,
+                        contributorStr,
+                        givenName,
+                        familyName,
+                        affiliation,
+                        orcidID,
+                        ror,
+                        first_contrib)
                 contributor.append(individual)
 
-        # Step 2: check for non-author role contributors found in Contacts
-        if contributors:
-            for person in contributors:
-                # add call to get ORCiD and affiliation
-                contributorStr, givenName, familyName = nameSplitter(person)
-                orcidID, affiliation, ror = get_ORCiD_and_Affiliation(person, self.file)
-                #if ror == "":
-                    #ror = get_ROR(affiliation)
-                individual = contributorFormat("Contributor", contributorStr, givenName, familyName, affiliation, orcidID, ror)
-                contributor.append(individual)
-        # Step 3: if no non-author role contributor is found, use backups (editors/curators)
-        else:
-            foundCurator = False
-            i = 0
-            # while a curator is not found
-            while not foundCurator and i < len(CuratorRoles):
-                # search for roles in backups that match CuratorRoles (in order of priority)
-                keys = [key for key, val in backups.items() if CuratorRoles[i] in val]
-                if keys != []:
-                    for key in keys:
-                        # add call to get ORCiD and affiliation
-                        editorStr, givenName, familyName = nameSplitter(key)
-                        orcidID, affiliation, ror = get_ORCiD_and_Affiliation(key, self.file)
-                        #if ror == "":
-                            #ror = get_ROR(affiliation)
-                        individual = contributorFormat(CuratorRoles[i], editorStr, givenName, familyName, affiliation, orcidID, ror)
-                        curators = individual
-                        foundCurator = True
-                i += 1
-
-            foundContact = False
-            j = 0
-            # while a curator is not found
-            while not foundContact and j < len(ContactPointRoles):
-                # search for roles in backups that match CuratorRoles (in order of priority)
-                keys = [key for key, val in backups.items() if ContactPointRoles[j] in val]
-                if keys != []:
-                    for key in keys:
-                        # add call to get ORCiD and affiliation
-                        editorStr, givenName, familyName = nameSplitter(key)
-                        orcidID, affiliation, ror = get_ORCiD_and_Affiliation(key, self.file)
-                        #if ror == "":
-                            #ror = get_ROR(affiliation)
-                        individual = contributorFormat(ContactPointRoles[j], editorStr, givenName, familyName, affiliation, orcidID, ror)
-                        contactPoints = individual
-                        foundContact = True
-                j += 1
-        # preserve order of elements
+        # Step 2: check for ContactPerson, DataCurator, ProjectLeader, ProjectManager,
+        #   DataCollector, and ProjectMember roles
+        if backups:
+            contributor = add_contributors(contributor, backups, DC_Roles)
+        # no valid contributors found
         if len(contributor) == 0:
             contributor = None
 
-        return contributor, curators, contactPoints
+        return contributor
 
     def get_provider(self) -> None:
         provider = None
@@ -721,10 +821,10 @@ class SPASE():
         # Each item is:
         #   {@type: Organization, name: PublishedBy OR Contact (if Role = Publisher) OR last part of RepositoryID}
         # Using schema:Organization as defined in: https://schema.org/Organization
-        author, authorRole, pubDate, publisher, contributor, dataset, backups, contactsList = get_authors(self.metadata)
+        author, authorRole, pubDate, publisher, dataset, backups, contactsList = get_authors(self.metadata)
         ror = None
         
-        if publisher == "":
+        """if publisher == "":
             RepoID = get_repoID(self.metadata)
             (before, sep, publisher) = RepoID.partition("Repository/")
         if ("SDAC" in publisher) or ("Solar Data Analysis Center" in publisher):
@@ -744,8 +844,9 @@ class SPASE():
                             "publisherIdentifierScheme":"ROR",
                             "schemeUri": "https://ror.org/",
                             "name": publisher}
-            else:
-                publisher = {"name": publisher}
+            else:"""
+        if publisher:
+            publisher = {"name": publisher}
         return publisher
 
     def get_funding(self) -> Union[List[Dict], None]:
@@ -848,60 +949,7 @@ class SPASE():
         # Mapping: prov:wasRevisionOf = spase:Association/spase:AssociationID
         #   (if spase:AssociationType is "RevisionOf")
         # prov:wasRevisionOf found at https://www.w3.org/TR/prov-o/#wasRevisionOf
-        relations = []
-
-        # traverse xml to extract needed info
-        for child in self.desiredRoot.iter(tag=etree.Element):
-            if child.tag.endswith("Association"):
-                targetChild = child
-                for child in targetChild:
-                    if child.tag.endswith("AssociationID"):
-                        A_ID = child.text
-                    elif child.tag.endswith("AssociationType"):
-                        type = child.text
-                if type == "RevisionOf":
-                    relations.append(A_ID)
-        if relations == []:
-            was_revision_of = None
-        else:
-            i = 0
-            # try and get DOI instead of SPASE ID
-            for record in relations:
-                if "Dev/" in self.file:
-                    absPath, sep, after = self.file.partition("Dev/")
-                else:
-                    absPath, sep, after = self.file.partition("NASA/")
-                record = absPath + record.replace("spase://","") + ".xml"
-                record = record.replace("'","")
-                if os.path.isfile(record):
-                    testSpase = SPASE(record)
-                    relations[i] = testSpase.get_url()
-                else:
-                    raise ValueError("Could not access associated SPASE record.")
-                i += 1
-            # add correct type
-            #if len(relations) > 1:
-            was_revision_of = []
-            for relation in relations:
-                isDataset, isArticle = verifyType(relation)
-                if isDataset:
-                    was_revision_of.append({"@type": "Dataset",
-                                        "@id": relation})
-                elif isArticle:
-                    was_revision_of.append({"@type": "ScholarlyArticle",
-                                        "@id": relation})
-                else:
-                    was_revision_of.append({"@id": relation})
-            """else:
-                isDataset, isArticle = verifyType(relations[0])
-                if isDataset:
-                    was_revision_of = {"@type": "Dataset",
-                                        "@id": relations[0]}
-                elif isArticle:
-                    was_revision_of = {"@type": "ScholarlyArticle",
-                                        "@id": relations[0]}
-                else:
-                    was_revision_of = {"@id": relations[0]}"""
+        was_revision_of = get_relation(self.desiredRoot, ["RevisionOf"])
         return was_revision_of
 
     def get_was_derived_from(self) -> Union[Dict, None]:
@@ -917,61 +965,7 @@ class SPASE():
         # Mapping: schema:isBasedOn = spase:Association/spase:AssociationID
         #   (if spase:AssociationType is "DerivedFrom" or "ChildEventOf")
         # schema:isBasedOn found at https://schema.org/isBasedOn
-        is_based_on = []
-        derivations = []
-
-        # traverse xml to extract needed info
-        for child in self.desiredRoot.iter(tag=etree.Element):
-            if child.tag.endswith("Association"):
-                targetChild = child
-                for child in targetChild:
-                    if child.tag.endswith("AssociationID"):
-                        A_ID = child.text
-                    elif child.tag.endswith("AssociationType"):
-                        type = child.text
-                if type == "DerivedFrom" or type == "ChildEventOf":
-                    derivations.append(A_ID)
-        if derivations == []:
-            is_based_on = None
-        else:
-            i = 0
-            # try and get DOI instead of SPASE ID
-            for record in derivations:
-                if "Dev/" in self.file:
-                    absPath, sep, after = self.file.partition("Dev/")
-                else:
-                    absPath, sep, after = self.file.partition("NASA/")
-                record = absPath + record.replace("spase://","") + ".xml"
-                record = record.replace("'","")
-                if os.path.isfile(record):
-                    testSpase = SPASE(record)
-                    derivations[i] = testSpase.get_url()
-                else:
-                    raise ValueError("Could not access associated SPASE record.")
-                i += 1
-            # add correct type
-            #if len(derivations) > 1:
-            is_based_on = []
-            for derivation in derivations:
-                isDataset, isArticle = verifyType(derivation)
-                if isDataset:
-                    is_based_on.append({"@type": "Dataset",
-                                        "@id": derivation})
-                elif isArticle:
-                    is_based_on.append({"@type": "ScholarlyArticle",
-                                        "@id": derivation})
-                else:
-                    is_based_on.append({"@id": derivation})
-            """else:
-                isDataset, isArticle = verifyType(derivations[0])
-                if isDataset:
-                    is_based_on = {"@type": "Dataset",
-                                        "@id": derivations[0]}
-                elif isArticle:
-                    is_based_on = {"@type": "ScholarlyArticle",
-                                        "@id": derivations[0]}
-                else:
-                    is_based_on = {"@id": derivations[0]}"""
+        is_based_on = get_relation(self.desiredRoot, ["ChildEventOf", "DerivedFrom"])
         return is_based_on
 
     def get_was_generated_by(self) -> Union[List[Dict], None]:
@@ -1038,7 +1032,6 @@ def get_authors(metadata: etree.ElementTree) -> tuple:
     authorRole = []
     pubDate = ""
     pub = ""
-    contributor = []
     dataset = ""
     backups = {}
     PI_child = None
@@ -1071,7 +1064,7 @@ def get_authors(metadata: etree.ElementTree) -> tuple:
                                 # find Role
                                 elif child.tag.endswith("Role"):
                                     # backup author
-                                    if ("PrincipalInvestigator" in child.text) or ("PI" in child.text) or ("CoInvestigator" in child.text):
+                                    if ("PrincipalInvestigator" in child.text) or ("PI" in child.text) or ("CoInvestigator" in child.text) or ("Author" in child.text):
                                         if PersonID not in author:
                                             author.append(PersonID)
                                             authorRole.append(child.text)
@@ -1080,9 +1073,6 @@ def get_authors(metadata: etree.ElementTree) -> tuple:
                                             authorRole[index] = [authorRole[index], child.text]
                                         # store author roles found here in case PubInfo present
                                         contactsList[PersonID] += [child.text]
-                                    # preferred contributor
-                                    elif child.text == "Contributor":
-                                        contributor.append(PersonID)
                                     # backup publisher
                                     elif child.text == "Publisher":
                                         pub = child.text
@@ -1111,13 +1101,39 @@ def get_authors(metadata: etree.ElementTree) -> tuple:
 
     # remove contacts w/o role values
     contactsCopy = {}
+    cleanedBackups = {}
     for contact, role in contactsList.items():
         if role:
             contactsCopy[contact] = role
+    for contact, role in backups.items():
+        if role:
+            cleanedBackups[contact] = role
     # compare author and contactsList to add author roles from contactsList for matching people found in PubInfo
     # also formats the author list correctly for use in get_creator
     author, authorRole, contactsList = process_authors(author, authorRole, contactsCopy)
-    return author, authorRole, pubDate, pub, contributor, dataset, backups, contactsList
+    # remove authors from backups if not considered a ContactPerson or DataCurator
+    DC_Roles = {}
+    DC_Roles["ContactPerson"] = ["GeneralContact", "HostContact", "MetadataContact", "TechnicalContact"]
+    DC_Roles["DataCurator"] = ["ArchiveSpecialist"]
+    backupsCopy = copy.deepcopy(cleanedBackups)
+    for each in author:
+        for key, val in backupsCopy.items():
+            # pulled from contacts
+            if "spase" in each:
+                if each == key:
+                    for role in val:
+                        if not (role in DC_Roles["ContactPerson"] or role in DC_Roles["DataCurator"]):
+                            cleanedBackups.pop(key)
+            # pulled from PubInfo authors
+            else:
+                # use nameSplitter to separate cleanedBackups key into family and givenName
+                #   to compare to author string
+                author_str, given_name, family_name = name_splitter(key)
+                if each == (family_name + ", " + given_name):
+                    for role in val:
+                        if not (role in DC_Roles["ContactPerson"] or role in DC_Roles["DataCurator"]):
+                            cleanedBackups.pop(key)
+    return author, authorRole, pubDate, pub, dataset, cleanedBackups, contactsList
 
 def get_accessURLs(metadata: etree.ElementTree) -> tuple:
     """
@@ -1276,186 +1292,175 @@ def get_repoID(metadata: etree.ElementTree) -> str:
                     repoID = child.text
     return repoID
 
-def contributorFormat(roleName:str, name:str, givenName:str, familyName:str, affiliation="", orcidID="", ror="") -> Dict:
+def person_format(
+    person_type: str,
+    role_name: Union[str, List],
+    name: str,
+    given_name: str,
+    family_name: str,
+    affiliation="",
+    orcid_id="",
+    ror="",
+    first_entry=False,
+) -> Dict:
     """
-    :param roleName: The value found in the Role field associated with this Contact
+    Groups up all available metadata associated with a given contact
+    into a dictionary following the SOSO guidelines.
+
+    :param person_type: The type of person being formatted. Values can be either:
+        contributor or creator.
+    :param role_name: The value found in the Role field associated with this Contact
     :param name: The full name of the Contact, as formatted in the SPASE record
-    :param givenName: The first name/initial and middle name/initial of the Contact
-    :param familyName: The last name of the Contact
+    :param given_name: The first name/initial and middle name/initial of the Contact
+    :param family_name: The last name of the Contact
     :param affiliation: The organization this Contact is affiliated with.
-    :param orcidID: The ORCiD identifier for this Contact
+    :param orcid_id: The ORCiD identifier for this Contact
     :param ror: The ROR ID for the associated affiliation
+    :param first_entry: Boolean signifying if this person is the
+        first entry into its respective property result.
 
-    :returns: The entry in the correct format to append to the contributor dictionary
+    :returns: The entry in the correct format to append to the contributor or creator dictionary
     """
-    
-    domain, sep, orcidVal = orcidID.rpartition("/")
 
-    if orcidID and affiliation and ror:
-        contact = {"@type": "Role", 
-                    "roleName": roleName,
-                    "contributor": {"@id": f"https://orcid.org/{orcidID}",
-                                    "@type": "Person",
-                                    "name": name,
-                                    "givenName": givenName,
-                                    "familyName": familyName,
-                                    "affiliation": {"@id": ror,
-                                                    "@type": "Organization",
-                                                    "name": affiliation},
-                                    "identifier": {"@id": f"https://orcid.org/{orcidID}",
-                                                    "@type": "PropertyValue",
-                                                    "propertyID": "https://registry.identifiers.org/registry/orcid",
-                                                    "url": f"https://orcid.org/{orcidID}",
-                                                    "value": f"orcid:{orcidVal}"}}
-                    }
-    elif orcidID and affiliation:
-        contact = {"@type": "Role", 
-                    "roleName": roleName,
-                    "contributor": {"@id": f"https://orcid.org/{orcidID}",
-                                    "@type": "Person",
-                                    "name": name,
-                                    "givenName": givenName,
-                                    "familyName": familyName,
-                                    "affiliation": {"@type": "Organization",
-                                                    "name": affiliation},
-                                    "identifier": {"@id": f"https://orcid.org/{orcidID}",
-                                                    "@type": "PropertyValue",
-                                                    "propertyID": "https://registry.identifiers.org/registry/orcid",
-                                                    "url": f"https://orcid.org/{orcidID}",
-                                                    "value": f"orcid:{orcidVal}"}}
-                    }
-    elif affiliation and ror:
-        contact = {"@type": "Role", 
-                "roleName": roleName,
-                "contributor": {"@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName,
-                                "affiliation": {"@id": ror,
-                                                "@type": "Organization",
-                                                "name": affiliation}}
+    *_, orcid_val = orcid_id.rpartition("/")
+    entry = None
+    # most basic format for creator item
+    if person_type == "creator":
+        entry = {
+            "@type": "Person",
+            "name": name
+        }
+        if given_name and family_name:
+            entry["familyName"] = family_name
+            entry["givenName"] = given_name
+
+    elif person_type == "contributor":
+        # Split string on uppercase characters
+        res = re.split(r"(?=[A-Z])", role_name)
+        # Remove empty strings and join with space or hypen depending on role_name
+        if "Co" in role_name:
+            pattern = r"{}(?=[A-Z])".format(re.escape("Co"))
+            if bool(re.search(pattern, role_name)):
+                pretty_name = "-".join(filter(None, res))
+            else:
+                pretty_name = " ".join(filter(None, res))
+        else:
+            pretty_name = " ".join(filter(None, res))
+        # most basic format for contributor item
+        entry = {
+            "@type": ["Role", "DefinedTerm"],
+            "contributor": {
+                "@type": "Person",
+                "name": name
+            },
+            "inDefinedTermSet": {
+                "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Role"
+            },
+            "roleName": pretty_name,
+            "termCode": role_name,
+        }
+
+        if given_name and family_name:
+            entry["contributor"]["familyName"] = family_name
+            entry["contributor"]["givenName"] = given_name
+
+        if first_entry:
+            entry["inDefinedTermSet"]["@type"] = "DefinedTermSet"
+            entry["inDefinedTermSet"]["name"] = "SPASE Role"
+            entry["inDefinedTermSet"][
+                "url"
+            ] = "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Role"
+
+    if orcid_id:
+        if person_type == "contributor":
+            entry["contributor"]["identifier"] = {
+                "@id": f"https://orcid.org/{orcid_id}",
+                "@type": "PropertyValue",
+                "propertyID": "https://registry.identifiers.org/registry/orcid",
+                "url": f"https://orcid.org/{orcid_id}",
+                "value": f"orcid:{orcid_val}",
+            }
+            entry["contributor"]["@id"] = f"https://orcid.org/{orcid_id}"
+        else:
+            entry["identifier"] = {
+                "@id": f"https://orcid.org/{orcid_id}",
+                "@type": "PropertyValue",
+                "propertyID": "https://registry.identifiers.org/registry/orcid",
+                "url": f"https://orcid.org/{orcid_id}",
+                "value": f"orcid:{orcid_val}",
+            }
+            entry["@id"] = f"https://orcid.org/{orcid_id}"
+    if affiliation:
+        if person_type == "contributor":
+            if ror:
+                entry["contributor"]["affiliation"] = {
+                    "@type": "Organization",
+                    "name": affiliation,
+                    "identifier": {
+                        "@id": f"https://ror.org/{ror}",
+                        "@type": "PropertyValue",
+                        "propertyID": "https://registry.identifiers.org/registry/ror",
+                        "url": f"https://ror.org/{ror}",
+                        "value": f"ror:{ror}",
+                    },
                 }
-    elif affiliation:
-        contact = {"@type": "Role", 
-                "roleName": roleName,
-                "contributor": {"@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName,
-                                "affiliation": {"@type": "Organization",
-                                                "name": affiliation}}
+            else:
+                entry["contributor"]["affiliation"] = {
+                    "@type": "Organization",
+                    "name": affiliation,
                 }
-    else:
-        contact = {"@type": "Role", 
-                "roleName": roleName,
-                "contributor": {"@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName}
-                }        
+        else:
+            if ror:
+                entry["affiliation"] = {
+                    "@type": "Organization",
+                    "name": affiliation,
+                    "identifier": {
+                        "@id": f"https://ror.org/{ror}",
+                        "@type": "PropertyValue",
+                        "propertyID": "https://registry.identifiers.org/registry/ror",
+                        "url": f"https://ror.org/{ror}",
+                        "value": f"ror:{ror}",
+                    },
+                }
+            else:
+                entry["affiliation"] = {"@type": "Organization", "name": affiliation}
 
-    return contact
+    return entry
 
-def creatorFormat(roleName:str, name:str, givenName:str, familyName:str, affiliation="", orcidID="", ror="") -> Dict:
+def name_splitter(person: str) -> tuple[str, str, str]:
     """
-    :param roleName: The value found in the Role field associated with this Contact
-    :param name: The full name of the Contact, as formatted in the SPASE record
-    :param givenName: The first name/initial and middle name/initial of the Contact
-    :param familyName: The last name of the Contact
-    :param affiliation: The organization this Contact is affiliated with.
-    :param orcidID: The ORCiD identifier for this Contact
-    :param ror: The ROR ID for the associated affiliation
+    Splits the given PersonID found in the SPASE Contacts container into
+    three separate strings holding their full name, first name (and middle initial),
+    and last name.
 
-    :returns: The entry in the correct format to append to the creator dictionary
-    """
-
-    domain, sep, orcidVal = orcidID.rpartition("/")
-
-    if orcidID and affiliation and ror:
-        creator = {"@type": "Role", 
-                    "roleName": roleName,
-                    "creator": {"@id": f"https://orcid.org/{orcidID}",
-                                "@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName,
-                                "affiliation": {"@id": ror,
-                                                "@type": "Organization",
-                                                "name": affiliation},
-                                "identifier": {"@id": f"https://orcid.org/{orcidID}",
-                                                "@type": "PropertyValue",
-                                                "propertyID": "https://registry.identifiers.org/registry/orcid",
-                                                "url": f"https://orcid.org/{orcidID}",
-                                                "value": f"orcid:{orcidVal}"}}
-                        }
-    elif orcidID and affiliation:
-        creator = {"@id": f"https://orcid.org/{orcidID}",
-                   "@type": "Role", 
-                    "roleName": roleName,
-                    "creator": {"@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName,
-                                "affiliation": {"@type": "Organization",
-                                                "name": affiliation},
-                                "identifier": {"@id": f"https://orcid.org/{orcidID}",
-                                                "@type": "PropertyValue",
-                                                "propertyID": "https://registry.identifiers.org/registry/orcid",
-                                                "url": f"https://orcid.org/{orcidID}",
-                                                "value": f"orcid:{orcidVal}"}}
-                        }
-    elif affiliation and ror:
-        creator = {"@type": "Role", 
-                    "roleName": roleName,
-                    "creator": {"@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName,
-                                "affiliation": {"@id": ror,
-                                                "@type": "Organization",
-                                                "name": affiliation}}
-                    }
-    elif affiliation:
-        creator = {"@type": "Role", 
-                    "roleName": roleName,
-                    "creator": {"@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName,
-                                "affiliation": {"@type": "Organization",
-                                                "name": affiliation}}
-                    }
-    else:
-        creator = {"@type": "Role", 
-                    "roleName": roleName,
-                    "creator": {"@type": "Person",
-                                "name": name,
-                                "givenName": givenName,
-                                "familyName": familyName}
-                    }
-    return creator
-
-def nameSplitter(person:str) -> tuple:
-    """
     :param person: The string found in the Contacts field as is formatted in the SPASE record.
 
-    :returns: The string containing only the full name of the Contact, the string containing the first name/initial of the Contact,
-                and the string containing the last name of the Contact
+    :returns: The string containing the full name of the Contact, the string
+        containing the first name/initial of the Contact,
+        and the string containing the last name of the Contact
     """
     if person:
-        path, sep, nameStr = person.partition("Person/")
+        *_, name_str = person.partition("Person/")
         # get rid of extra quotations
-        nameStr = nameStr.replace("'","")
-        givenName, sep, familyName = nameStr.partition(".")
-        # if name has initial(s)
-        if ("." in familyName):
-            initial, sep, familyName = familyName.partition(".")
-            givenName = givenName + ' ' + initial + '.'
-        nameStr = givenName + " " + familyName
-        nameStr = nameStr.replace("\"", "")
+        name_str = name_str.replace("'", "")
+        if "." in name_str:
+            given_name, _, family_name = name_str.partition(".")
+            # if name has initial(s)
+            if "." in family_name:
+                initial, _, family_name = family_name.partition(".")
+                if len(initial) > 1:
+                    initial = initial[0]
+                given_name = given_name + " " + initial + "."
+            name_str = given_name + " " + family_name
+            name_str = name_str.replace('"', "")
+        else:
+            given_name = ""
+            family_name = ""
     else:
-        raise ValueError("This function only takes a nonempty string as an argument. Try again.")
-    return nameStr, givenName, familyName
+        raise ValueError(
+            "This function only takes a nonempty string as an argument. Try again."
+        )
+    return name_str, given_name, family_name
 
 def get_information_url(metadata: etree.ElementTree) -> Union[List[Dict], None]:
     """
@@ -1723,8 +1728,11 @@ def get_cadenceContext(cadence:str) -> str:
         context = None
     return context
 
-def get_mentions(metadata: etree.ElementTree, path:str) -> Union[List[Dict], Dict, None]:
+def get_mentions(metadata: etree.ElementTree) -> Union[List[Dict], Dict, None]:
     """
+    Scrapes any AssociationIDs with the AssociationType "Other" and formats them
+    as dictionaries using the get_relation function.
+
     :param metadata: The SPASE metadata object as an XML tree.
 
     :returns: The ID's of other SPASE records related to this one in some way.
@@ -1733,66 +1741,18 @@ def get_mentions(metadata: etree.ElementTree, path:str) -> Union[List[Dict], Dic
     #   (if spase:AssociationType is "Other")
     # schema:mentions found at https://schema.org/mentions
     root = metadata.getroot()
+    desired_root = None
     for elt in root.iter(tag=etree.Element):
         if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
-            desiredRoot = elt
-    relations = []
-    # iterate thru xml to find desired info
-    for child in desiredRoot.iter(tag=etree.Element):
-        if child.tag.endswith("Association"):
-            targetChild = child
-            for child in targetChild:
-                if child.tag.endswith("AssociationID"):
-                    A_ID = child.text
-                elif child.tag.endswith("AssociationType"):
-                    type = child.text
-            if type == "Other":
-                relations.append(A_ID)
-    if relations == []:
-        mentions = None
-    else:
-        i = 0
-        # try and get DOI instead of SPASE ID
-        for record in relations:
-            if "Dev/" in path:
-                absPath, sep, after = path.partition("Dev/")
-            else:
-                absPath, sep, after = path.partition("NASA/")
-            record = absPath + record.replace("spase://","") + ".xml"
-            record = record.replace("'","")
-            if os.path.isfile(record):
-                testSpase = SPASE(record)
-                relations[i] = testSpase.get_url()
-            else:
-                raise ValueError("Could not access associated SPASE record.")
-            i += 1
-        # add correct type
-        #if len(relations) > 1:
-        mentions = []
-        for relation in relations:
-            isDataset, isArticle = verifyType(relation)
-            if isDataset:
-                mentions.append({"@type": "Dataset",
-                                    "@id": relation})
-            elif isArticle:
-                mentions.append({"@type": "ScholarlyArticle",
-                                    "@id": relation})
-            else:
-                mentions.append({"@id": relation})
-        """else:
-            isDataset, isArticle = verifyType(relations[0])
-            if isDataset:
-                mentions = {"@type": "Dataset",
-                                    "@id": relations[0]}
-            elif isArticle:
-                mentions = {"@type": "ScholarlyArticle",
-                                    "@id": relations[0]}
-            else:
-                mentions = {"@id": relations[0]}"""
+            desired_root = elt
+    mentions = get_relation(desired_root, ["Other"])
     return mentions
 
-def get_is_part_of(metadata: etree.ElementTree, path:str) -> Union[List[Dict], Dict, None]:
+def get_is_part_of(metadata: etree.ElementTree) -> Union[List[Dict], Dict, None]:
     """
+    Scrapes any AssociationIDs with the AssociationType "PartOf" and formats them
+    as dictionaries using the get_relation function.
+
     :param metadata: The SPASE metadata object as an XML tree.
 
     :returns: The ID(s) of the larger resource this SPASE record is a portion of, as a dictionary.
@@ -1801,68 +1761,16 @@ def get_is_part_of(metadata: etree.ElementTree, path:str) -> Union[List[Dict], D
     #   (if spase:AssociationType is "PartOf")
     # schema:isPartOf found at https://schema.org/isPartOf
     root = metadata.getroot()
+    desired_root = None
     for elt in root.iter(tag=etree.Element):
         if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
-            desiredRoot = elt
-    relations = []
-    # iterate thru xml to find desired info
-    for child in desiredRoot.iter(tag=etree.Element):
-        if child.tag.endswith("Association"):
-            targetChild = child
-            for child in targetChild:
-                if child.tag.endswith("AssociationID"):
-                    A_ID = child.text
-                elif child.tag.endswith("AssociationType"):
-                    type = child.text
-            if type == "PartOf":
-                relations.append(A_ID)
-    if relations == []:
-        is_part_of = None
-    else:
-        i = 0
-        # try and get DOI instead of SPASE ID
-        for record in relations:
-            if "Dev/" in path:
-                absPath, sep, after = path.partition("Dev/")
-            else:
-                absPath, sep, after = path.partition("NASA/")
-            record = absPath + record.replace("spase://","") + ".xml"
-            record = record.replace("'","")
-            if os.path.isfile(record):
-                testSpase = SPASE(record)
-                relations[i] = testSpase.get_url()
-            else:
-                raise ValueError("Could not access associated SPASE record.")
-            i += 1
-        # add correct type
-        #if len(relations) > 1:
-        is_part_of = []
-        for relation in relations:
-            isDataset, isArticle = verifyType(relation)
-            if isDataset:
-                is_part_of.append({"@type": "Dataset",
-                                    "@id": relation})
-            elif isArticle:
-                is_part_of.append({"@type": "ScholarlyArticle",
-                                    "@id": relation})
-            else:
-                is_part_of.append({"@id": relation})
-        """else:
-            isDataset, isArticle = verifyType(relations[0])
-            if isDataset:
-                is_part_of = {"@type": "Dataset",
-                                    "@id": relations[0]}
-            elif isArticle:
-                is_part_of = {"@type": "ScholarlyArticle",
-                                    "@id": relations[0]}
-            else:
-                is_part_of = {"@id": relations[0]}"""
+            desired_root = elt
+    is_part_of = get_relation(desired_root, ["PartOf"])
     return is_part_of
 
-def get_ORCiD_and_Affiliation(PersonID: str, file: str) -> tuple:
+def get_ORCiD_and_Affiliation(PersonID: str) -> tuple:
     """
     :param PersonID: The SPASE ID linking the page with the Person's info.
-    :param file: The absolute path of the original xml file scraped.
 
     :returns: The ORCiD ID and organization name (with its ROR ID, if found) this Contact is affiliated with, as strings.
     """
@@ -1870,12 +1778,22 @@ def get_ORCiD_and_Affiliation(PersonID: str, file: str) -> tuple:
     orcidID = ""
     affiliation = ""
     ror = ""
-    if "Dev/" in file:
-        absPath, sep, after = file.partition("Dev/")
+
+    # get home directory
+    home_dir = str(Path.home())
+    home_dir = home_dir.replace("\\", "/")
+    # get current working directory
+    cwd = str(Path.cwd()).replace("\\", "/")
+    # see if file is one that has been adjusted locally
+    *_, file_name = PersonID.rpartition("/")
+    file_path = os.path.join(f"{cwd}/ExternalSPASE_XMLs/", f"spase-{file_name}.xml")
+    #print("file path is " + file_path)
+    if os.path.isfile(file_path):
+        record = home_dir + "/Dev/SPASE-DataCite/ExternalSPASE_XMLs/" + f"spase-{file_name}" + ".xml"
     else:
-        absPath, sep, after = file.partition("NASA/")
-    record = absPath + PersonID.replace("spase://","") + ".xml"
+        record = home_dir + PersonID.replace("spase://","/") + ".xml"
     record = record.replace("'","")
+    #print("record is " + record)
     if os.path.isfile(record):
         testSpase = SPASE(record)
         root = testSpase.metadata.getroot()
@@ -1893,50 +1811,6 @@ def get_ORCiD_and_Affiliation(PersonID: str, file: str) -> tuple:
     else:
         raise ValueError("Could not access associated SPASE record.")
     return orcidID, affiliation, ror
-
-def get_ROR(orgName:str) -> Union[str, None]:
-    """
-    :param orgName: The name of the organization you wish to retrieve the ROR ID for.
-    
-    :returns: The ROR ID of the given organization, as a string.
-    """
-
-    # Request ROR ID's for a given org name
-    # https://api.ror.org/v2/organizations?affiliation=<URL-encoded string>
-
-    # Request entire Datacite DOI info
-    # "https://api.datacite.org/dois/10.48322%2F6cfb-rq65?affiliation=true&publisher=true"
-
-    ror = None
-    # if want to get ROR ID's via REST API (faster than Data Dump)
-    url = "https://api.ror.org/v2/organizations"
-    response = requests.get(url, params={"affiliation": orgName})
-    dict = json.loads(response.text)
-    for item in dict["items"]:
-        if (item["chosen"] == True) and (item["matching_type"] == "EXACT"):
-            ror = item["organization"]["id"]
-
-    # downloads ROR Data Dump file for use in script
-    """response = requests.get("https://zenodo.org/api/communities/ror-data/records?q=&sort=newest")
-    RORrecords = json.loads(response.text)
-    downloadURL = RORrecords["hits"]["hits"][0]["files"][0]["links"]["self"]
-    response = requests.get(downloadURL)
-    with open('ROR_DataDump.zip', 'wb') as f:
-        f.write(response.content)"""
-
-    # find ROR ID's by searching Data Dump file (slower)
-    """with zipfile.ZipFile("ROR_DataDump.zip") as z:    
-        for filename in z.namelist():
-            # find most up-to-date json
-            if not os.path.isdir(filename) and "v2.json" in filename:
-                # search the file for orgName
-                with open(filename, 'r') as file:
-                    dataDump = json.load(file)
-                    for item in dataDump:
-                        for name in item["names"]:
-                            if name["value"] == orgName:
-                                ror = item["id"]"""
-    return ror
 
 def get_temporal(metadata: etree.ElementTree, namespaces: Dict) -> Union[List, None]:
     """
@@ -1986,59 +1860,90 @@ def get_metadata_license(metadata: etree.ElementTree) -> str:
             metadata_license = val
     return metadata_license
 
-def process_authors(author:List, authorRole:List, contactsList:Dict) -> tuple:
+def process_authors(
+    author: List, author_role: List, contacts_list: Dict
+) -> tuple[List, List, Dict]:
     """
+    Groups any contact names from the SPASE Contacts container with their matching names, if
+    found, in PubInfo:Authors, and adds any additional author roles (such as PI) to their
+    corresponding entry in the author_roles list. Any contact with an author role not
+    listed in PubInfo:Authors is added to the contacts_list with the rest of the
+    non-matching contacts for use in get_contributors. Lastly, authors selected from
+    Contacts when no PubInfo:Authors are re-ordered according to priority list.
+
     :param author: The list of names found in SPASE record to be used in get_creator
-    :param authorRole: The list of roles associated with each person found in author list
-    :param contactsList: The dictionary containing the names of people considered to 
-                            be authors as formatted in the Contacts container in the 
+    :param author_role: The list of roles associated with each person found in author list
+    :param contacts_list: The dictionary containing the names of people considered to
+                            be authors as formatted in the Contacts container in the
                             SPASE record, as well as their roles
 
-    :returns: The updated author, authorRoles, and contactsList items after merging any author
-                roles from Contacts with the roles associated with them if found in PubInfo.  
+    :returns: The updated author, author_roles, and contacts_list items after merging any author
+                roles from Contacts with the roles associated with them if found in PubInfo.
     """
     # loop thru all contacts to find any that match authors, unless no PubInfo was found
-    # if matches found, add roles to authorRoles and remove them from contactsList
-    # if no match found for person(s), leave in contactsList for use in get_contributors
+    # if matches found, add roles to author_roles and remove them from contacts_list
+    # if no match found for person(s), leave in contacts_list for use in get_contributors
 
-    authorStr = str(author).replace("[", "").replace("]","")
+    author_str = str(author).replace("[", "").replace("]", "")
     # if creators were found in Contact/PersonID (no PubInfo)
-    # remove author roles from contactsList so not duplicated in contributors (since already in author list)
-    if "Person/" in authorStr:
-        contactsCopy = {}
-        for person, val in contactsList.items():
-            contactsCopy[person] = []
+    # remove author roles from contacts_list so not duplicated in contributors
+    #   (since already in author list), and order those in authors list in
+    #   terms of priority
+    if "Person/" in author_str:
+        contacts_copy = {}
+        for person, val in contacts_list.items():
+            contacts_copy[person] = []
             for role in val:
-                # if role is not considered for author, add to acceptable roles list for use in contributors
-                if ("PrincipalInvestigator" not in role) and ("PI" not in role) and ("CoInvestigator" not in role):
-                    contactsCopy[person].append(role)
+                # if role is not considered for author, add to acceptable roles
+                #   list for use in contributors
+                if (
+                    ("PrincipalInvestigator" not in role)
+                    and ("PI" not in role)
+                    and ("CoInvestigator" not in role)
+                    and ("Author" not in role)
+                ):
+                    contacts_copy[person].append(role)
             # if no acceptable roles were found, remove that author from contributor consideration
-            if contactsCopy[person] == []:
-                contactsCopy.pop(person)
-        return author, authorRole, contactsCopy
+            if contacts_copy[person] == []:
+                contacts_copy.pop(person)
+        # order backup authors according to following roles list
+        author_ordered = []
+        author_role_ordered = []
+        roles = ["Author", "PrincipalInvestigator", "MissionPrincipalInvestigator",
+            "CoPI", "DeputyPI", "FormerPI", "CoInvestigator"]
+        for role in roles:
+            for num, creator in enumerate(author):
+                if author_role[num] == role:
+                    if creator not in author_ordered:
+                        author_ordered.append(creator)
+                        author_role_ordered.append(author_role[num])
+        return author_ordered, author_role_ordered, contacts_copy
     # if all creators were found in PublicationInfo/Authors
     else:
         # if there are multiple authors
-        if (";" in authorStr) or (".," in authorStr):
-            if (";" in authorStr):
-                author = authorStr.split("; ")
+        if ("; " in author_str) or ("., " in author_str) or (" and " in author_str) or (" & " in author_str):
+            if ";" in author_str:
+                author = author_str.split("; ")
+            elif ".," in author_str:
+                author = author_str.split("., ")
+            elif " and " in author_str:
+                author = author_str.split(" and ")
             else:
-                author = authorStr.split("., ")
+                author = author_str.split(" & ")
             # fix num of roles
-            while (len(authorRole) < len(author)):
-                authorRole += ["Author"]
+            while len(author_role) < len(author):
+                author_role += ["Author"]
             # get rid of extra quotations
             for num, each in enumerate(author):
-                if "\'" in each:
-                    author[num] = each.replace("\'","")
+                if "'" in each:
+                    author[num] = each.replace("'", "")
             # iterate over each person in author string
             for person in author:
-                matchingContact = None
                 index = author.index(person)
                 # if first name doesnt have a period, check if it is an initial
-                if (not person.endswith(".")):
+                if not person.endswith("."):
                     # if first name is an initial w/o a period, add one
-                    grp = re.search(r'[\.\s]{1}[\w]{1}$', person)
+                    grp = re.search(r"[\.\s]{1}[\w]{1}$", person)
                     if grp is not None:
                         person += "."
                 # remove 'and' from name
@@ -2046,94 +1951,161 @@ def process_authors(author:List, authorRole:List, contactsList:Dict) -> tuple:
                     person = person.replace("and ", "")
                 # continued formatting fixes
                 if ", " in person:
-                    familyName, sep, givenName = person.partition(", ")
+                    family_name, _, given_name = person.partition(", ")
                 else:
-                    givenName, sep, familyName = person.partition(". ")
-                    givenName += "."
-                if "," in givenName:
-                    givenName = givenName.replace(",","")
+                    given_name, _, family_name = person.partition(". ")
+                    given_name += "."
+                if "," in given_name:
+                    given_name = given_name.replace(",", "")
                 # iterate thru contacts to find one that matches the current person
-                for contact in contactsList.keys():
-                    if matchingContact is None:
-                        firstName, sep, lastName = contact.rpartition(".")
-                        firstName, sep, initial = firstName.partition(".")
-                        path, sep, firstName = firstName.rpartition("/")
-                        # Assumption: if first name initial, middle initial, and last name match = same person
-                        # remove <f"{firstName[0]}."> in the line below if this assumption is no longer accurate
-                        if ((f"{firstName[0]}." in person) or (firstName in person)) and (f"{initial}." in person) and (lastName in person):
-                            matchingContact = contact
-                # if match is found, add role to authorRole and replace role with formatted person name in contactsList
-                if matchingContact is not None:
-                    authorRole[index] = [authorRole[index]] + contactsList[matchingContact]
-                    contactsList[matchingContact] = f"{lastName}, {firstName} {initial}."
-                author[index] = (f'{familyName}, {givenName}').strip()
+                contacts_list, author_role = findMatch(contacts_list, person, author_role, index)
+                author[index] = (f"{family_name}, {given_name}").strip()
         # if there is only one author listed
         else:
-            matchingContact = None
             # get rid of extra quotations
-            person = authorStr.replace("\"","")
-            if authorRole == ["Author"]:
-                familyName, sep, givenName = person.partition(",")
-                # handle case when name is not formatted correctly
-                if givenName == "":
-                    givenName, sep, familyName = familyName.partition(". ")
-                    initial, sep, familyName = familyName.partition(" ")
-                    givenName = givenName + ". " + initial[0] + "."
-                if "," in givenName:
-                    givenName = givenName.replace(",","")
+            person = author_str.replace('"', "")
+            person = author_str.replace("'", "")
+            # if author is a person (assuming names contain a comma)
+            if ", " in person:
+                family_name, _, given_name = person.partition(", ")
+                # also used when there are 3+ comma separated orgs 
+                #   listed as authors - not intended (how to fix?)
+                if "," in given_name:
+                    given_name = given_name.replace(",", "")
                 # iterate thru contacts to find one that matches the current person
-                for contact in contactsList.keys():
-                    if matchingContact is None:
-                        firstName, sep, lastName = contact.rpartition(".")
-                        firstName, sep, initial = firstName.partition(".")
-                        path, sep, firstName = firstName.rpartition("/")
-                        # Assumption: if first name initial, middle initial, and last name match = same person
-                        # remove <f"{firstName[0]}."> in the line below if this assumption is no longer accurate
-                        if ((f"{firstName[0]}." in person) or (firstName in person)) and (f"{initial}." in person) and (lastName in person):
-                            matchingContact = contact
-                # if match is found, add role to authorRole and replace role with formatted person name in contactsList
-                if matchingContact is not None:
-                    authorRole[0] = [authorRole[0]] + contactsList[matchingContact]
-                    contactsList[matchingContact] = f"{lastName}, {firstName} {initial}."
-                author[0] = (f'{familyName}, {givenName}').strip()
-    return author, authorRole, contactsList
+                contacts_list, author_role = findMatch(contacts_list, person, author_role, 0)
+                author[0] = (f"{family_name}, {given_name}").strip()
+            else:
+                # handle case when assumption 'names have commas' fails
+                if ". " in person:
+                    given_name, _, family_name = person.partition(". ")
+                    if " " in family_name:
+                        initial, _, family_name = family_name.partition(" ")
+                        given_name = given_name + ". " + initial[0] + "."
+                    # iterate thru contacts to find one that matches the current person
+                    contacts_list, author_role = findMatch(contacts_list, person, author_role, 0)
+                    author[0] = (f"{family_name}, {given_name}").strip()
+                # author is an organization, so no splitting is needed
+                else:
+                    author[0] = person.strip()
+    return author, author_role, contacts_list
 
-def verifyType(url:str) -> tuple:
+def verify_type(url: str) -> tuple[bool, bool, dict]:
     """
+    Verifies that the link found in AssociationID is to a dataset or journal article and acquires
+    more information if a dataset is not hosted by NASA.
+
     :param url: The link provided as an Associated work/reference for the SPASE record
 
-    :returns: Boolean values signifying if the link is a Dataset or a ScholarlyArticle
+    :returns: Boolean values signifying if the link is a Dataset/ScholarlyArticle.
+                Also a dictionary with additional info about the related Dataset
+                acquired from DataCite API if it is not hosted by NASA.
     """
     # tests SPASE records to make sure they are datasets or a journal article
-    isDataset = False
-    isArticle = False
-
-    if "hpde.io" in url:
-        if "Data" in url:
-            isDataset = True
-    # case where url provided is a DOI
-    else:
-        link = requests.head(url)
-        # check to make sure doi resolved to an hpde.io page
-        if "hpde.io" in link.headers['location']:
-            if "Data" in link.headers['location']:
-                isDataset = True
-        # if not, call DataCite API to check resourceTypeGeneral property associated w the record
+    is_dataset = False
+    is_article = False
+    non_spase_info = {}
+    if url is not None:
+        if "hpde.io" in url:
+            if "Data" in url:
+                is_dataset = True
+        # case where url provided is a DOI
         else:
-            protocol, sep, doi = link.partition("doi.org/")
-            dataciteLink = f"https://api.datacite.org/dois/{doi}"
-            headers = {"accept": "application/vnd.api+json"}
-            response = requests.get(dataciteLink, headers=headers)
-            dict = json.loads(response.text)
-            for item in dict["data"]["types"]:
-                if (item["resourceTypeGeneral"] == "Dataset"):
-                    isDataset = True
-                elif (item["resourceTypeGeneral"] == "JournalArticle"):
-                    isArticle = True
-                # if wish to add more checks, simply add more "elif" stmts like above
-                # and adjust provenance/relationship functions to include new type check
-
-    return isDataset, isArticle
+            link = requests.head(url, timeout=30)
+            # check to make sure doi resolved to an hpde.io page
+            if "hpde.io" in link.headers["location"]:
+                if "Data" in link.headers["location"]:
+                    is_dataset = True
+            # if not, call DataCite API to check resourceTypeGeneral
+            #   property associated w the record
+            else:
+                *_, doi = url.partition("doi.org/")
+                # dataciteLink = f"https://api.datacite.org/dois/{doi}"
+                # headers = {"accept": "application/vnd.api+json"}
+                # response = requests.get(dataciteLink, headers=headers)
+                response = requests.get(
+                    f"https://api.datacite.org/application/vnd.datacite.datacite+json/{doi}",
+                    timeout=30,
+                )
+                if response.raise_for_status() is None:
+                    datacite_dict = json.loads(response.text)
+                    if "resourceType" in datacite_dict["types"].keys():
+                        if datacite_dict["types"]["resourceType"]:
+                            if datacite_dict["types"]["resourceType"] == "Dataset":
+                                is_dataset = True
+                            elif (
+                                datacite_dict["types"]["resourceType"]
+                                == "JournalArticle"
+                            ):
+                                is_article = True
+                        else:
+                            if (
+                                datacite_dict["types"]["resourceTypeGeneral"]
+                                == "Dataset"
+                            ):
+                                is_dataset = True
+                            elif (
+                                datacite_dict["types"]["resourceTypeGeneral"]
+                                == "JournalArticle"
+                            ):
+                                is_article = True
+                    else:
+                        if datacite_dict["types"]["resourceTypeGeneral"] == "Dataset":
+                            is_dataset = True
+                        elif (
+                            datacite_dict["types"]["resourceTypeGeneral"]
+                            == "JournalArticle"
+                        ):
+                            is_article = True
+                        # if wish to add more checks, simply add more "elif" stmts like above
+                        # and adjust provenance/relationship functions to include new type check
+                    if is_dataset:
+                        # grab name, description, license, and creators
+                        non_spase_info["name"] = datacite_dict["titles"][0]["title"]
+                        if datacite_dict["descriptions"]:
+                            non_spase_info["description"] = datacite_dict[
+                                "descriptions"
+                            ][0]["description"]
+                        else:
+                            non_spase_info["description"] = (
+                                f"No description currently available for {url}."
+                            )
+                        if datacite_dict["rightsList"]:
+                            non_spase_info["license"] = []
+                            for each in datacite_dict["rightsList"]:
+                                non_spase_info["license"].append(each["rightsUri"])
+                        for creator in datacite_dict["creators"]:
+                            if ("givenName" in creator.keys()) and (
+                                "familyName" in creator.keys()
+                            ):
+                                family_name = creator["familyName"]
+                                given_name = creator["givenName"]
+                            elif ", " in creator["name"]:
+                                family_name, _, given_name = creator["name"].partition(
+                                    ", "
+                                )
+                            else:
+                                family_name = ""
+                                given_name = ""
+                            # adjust DataCite format to conform to schema.org format
+                            if creator["affiliation"]:
+                                non_spase_info["creators"] = person_format(
+                                    "creator",
+                                    "",
+                                    creator["name"],
+                                    given_name,
+                                    family_name,
+                                    creator["affiliation"]["name"],
+                                )
+                            else:
+                                non_spase_info["creators"] = person_format(
+                                    "creator",
+                                    "",
+                                    creator["name"],
+                                    given_name,
+                                    family_name,
+                                )
+    return is_dataset, is_article, non_spase_info
 
 def get_ResourceID(metadata: etree.ElementTree, namespaces: Dict):
     """
@@ -2155,3 +2127,214 @@ def get_ResourceID(metadata: etree.ElementTree, namespaces: Dict):
         SPASE_Location, namespaces=namespaces
     )
     return dataset_id
+
+def get_relation(desired_root: etree.Element, association: list[str]) -> Union[List[Dict], Dict, None]:
+    """
+    Scrapes through the SPASE record and returns the AssociationIDs which have the
+    given AssociationType. These are formatted as dictionaries and use the verify_type
+    function to add the correct type to each entry.
+
+    :param desired_root: The element in the SPASE metadata tree object we are searching from.
+    :param association: The AssociationType(s) we are searching for in the SPASE record.
+
+    :returns: The ID's of other SPASE records related to this one in some way.
+    """
+    relations = []
+    assoc_id = ""
+    assoc_type = ""
+    relational_records = {}
+    # iterate thru xml to find desired info
+    if desired_root is not None:
+        for child in desired_root.iter(tag=etree.Element):
+            if child.tag.endswith("Association"):
+                target_child = child
+                for child in target_child:
+                    if child.tag.endswith("AssociationID"):
+                        assoc_id = child.text
+                    elif child.tag.endswith("AssociationType"):
+                        assoc_type = child.text
+                for each in association:
+                    if assoc_type == each:
+                        relations.append(assoc_id)
+        if not relations:
+            relation = None
+        else:
+            i = 0
+            # try and get DOI instead of SPASE ID
+            for record in relations:
+                # get home directory
+                home_dir = str(Path.home()).replace("\\", "/")
+                # get current working directory
+                cwd = str(Path.cwd()).replace("\\", "/")
+                # format record
+                *_, file_name = record.rpartition("/")
+                file_path = os.path.join(f"{cwd}/ExternalSPASE_XMLs/", f"spase-{file_name}.xml")
+                #print("file path is " + file_path)
+                if os.path.isfile(file_path):
+                    record = home_dir + "/Dev/SPASE-DataCite/ExternalSPASE_XMLs/" + f"spase-{file_name}" + ".xml"
+                else:
+                    record = home_dir + record.replace("spase://","/") + ".xml"
+                record = record.replace("'", "")
+                if os.path.isfile(record):
+                    test_spase = SPASE(record)
+                    url = test_spase.get_url()
+                    name = test_spase.get_name()
+                    description = test_spase.get_description()
+                    spase_license = test_spase.get_license()
+                    creators = test_spase.get_creator()
+                    if creators is None:
+                        creators = "No creators were found. View record for contacts."
+                    relational_records[url] = {
+                        "name": name,
+                        "description": description,
+                        "creators": creators,
+                    }
+                    if spase_license is not None:
+                        relational_records[url]["license"] = spase_license
+                i += 1
+            relation = []
+            # not SPASE records
+            if not relational_records:
+                for each in relations:
+                    # most basic entry into relation
+                    entry = {"@id": each, "identifier": each, "url": each}
+                    is_dataset, is_article, non_spase_info = verify_type(each)
+                    if is_dataset:
+                        entry["@type"] = "Dataset"
+                        entry["name"] = non_spase_info["name"]
+                        entry["description"] = non_spase_info["description"]
+                        if "license" in non_spase_info.keys():
+                            entry["license"] = non_spase_info["license"]
+                        entry["creator"] = non_spase_info["creators"]
+                    elif is_article:
+                        entry["@type"] = "ScholarlyArticle"
+                    relation.append(entry)
+            else:
+                for each in relational_records.keys():
+                    # most basic entry into relation
+                    entry = {"@id": each, "identifier": each, "url": each}
+                    is_dataset, is_article, non_spase_info = verify_type(each)
+                    if is_dataset:
+                        entry["@type"] = "Dataset"
+                        entry["name"] = relational_records[each]["name"]
+                        entry["description"] = relational_records[each]["description"]
+                        if "license" in relational_records[each].keys():
+                            entry["license"] = relational_records[each]["license"]
+                        entry["creator"] = relational_records[each]["creators"]
+                    elif is_article:
+                        entry["@type"] = "ScholarlyArticle"
+                    relation.append(entry)
+    else:
+        relation = None
+    return relation
+
+def findMatch(contacts_list: dict, person: str, author_role: list, index: int, matching_contact: bool = None) -> tuple[dict, list]:
+    """
+    Attempts to find a match in the provided dictionary of contacts (with their roles)
+    found in the SPASE record to the given person name. If a match is found, that role
+    is added to corresponding entry in the given list of author roles, and, in the
+    dictionary of contacts, the role value is replaced with the formatted person name.
+
+    :param contacts_list: The dictionary containing the contacts found in the SPASE record as keys
+                            and their roles as values.
+    :param person: The string containing the name of the person you wish to find a match for.
+    :param author_role: The list of author roles.
+    :param index: The index of the matching entry in author_roles that should be adjusted.
+    :param matching_contact: The string containing the contact from the contacts_list parameter
+                                that matches the person parameter
+
+    :returns: The updated versions of the given dictionary of contacts and list of author roles.
+    """
+    for contact in contacts_list.keys():
+        if matching_contact is None:
+            initial = None
+            first_name, _, last_name = contact.rpartition(".")
+            first_name, _, initial = first_name.partition(".")
+            *_, first_name = first_name.rpartition("/")
+            if len(first_name) == 1:
+                first_name = first_name[0] + "."
+            # Assumption: if first name initial, middle initial, and last name
+            #   match = same person
+            # remove <f"{first_name[0]}."> in the lines below if this assumption
+            #   is no longer accurate
+            # if no middle name
+            if not initial:
+                if (
+                    (f"{first_name[0]}." in person)
+                    or (first_name in person)
+                ) and (last_name in person):
+                    matching_contact = contact
+            # if middle name is not initialized, check whole string
+            elif len(initial) > 1:
+                if (
+                    (
+                        (f"{first_name[0]}." in person)
+                        or (first_name in person)
+                    )
+                    and (initial in person)
+                    and (last_name in person)
+                ):
+                    matching_contact = contact
+            else:
+                if (
+                    (
+                        (f"{first_name[0]}." in person)
+                        or (first_name in person)
+                    )
+                    and (f"{initial}." in person)
+                    and (last_name in person)
+                ):
+                    matching_contact = contact
+    # if match is found, add role to author_role and replace role with
+    #   formatted person name in contacts_list
+    if matching_contact is not None:
+        if author_role[index] != contacts_list[matching_contact]:
+            author_role[index] = [author_role[index]] + contacts_list[matching_contact]
+        if not initial:
+            contacts_list[matching_contact] = f"{last_name}, {first_name}"
+        elif len(initial) > 1:
+            contacts_list[matching_contact] = (
+                f"{last_name}, {first_name} {initial}"
+            )
+        else:
+            contacts_list[matching_contact] = (
+                f"{last_name}, {first_name} {initial}."
+            )
+    return contacts_list, author_role
+
+def add_contributors(contributors:list, backups:dict, role_list:dict) -> Union[dict, None]:
+    """
+    Searches the provided dictionary of non-author role contacts to find any that have a role
+    included in the provided list of roles. If one is found, a dictionary entry is created for
+    this person and is added to the list of contributors.
+
+    :param contributors: The list that holds all contributors to be provided to DataCite.
+    :param backups: The dictionary containing the contacts found in the SPASE record as keys
+                            and their non-author roles as values.
+    :param role_list: The list of roles we want to find.
+
+    :returns: The updated version of the given dictionary of contributors.
+    """
+    individual = {}
+    first_contrib = True
+    if contributors:
+        first_contrib = False
+    # search for roles in backups that match those in given list of roles
+    for DC_Role, roles in role_list.items():
+        keys = []
+        for key, vals in backups.items():
+            for val in vals:
+                if val in roles:
+                    #if key not in keys:
+                    keys.append(key)
+        if keys != []:
+            for key in keys:
+                # add call to get ORCiD and affiliation
+                personStr, givenName, familyName = name_splitter(key)
+                orcidID, affiliation, ror = get_ORCiD_and_Affiliation(key)
+                #if ror == "":
+                    #ror = get_ROR(affiliation)
+                #print(f"{key} is being added to the contributors list")
+                individual = person_format("contributor", DC_Role, personStr, givenName, familyName, affiliation, orcidID, ror, first_contrib)
+                contributors.append(individual)
+    return contributors
