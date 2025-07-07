@@ -522,7 +522,7 @@ class SPASE():
         # Mapping: schema:datePublished = spase:ResourceHeader/spase:PublicationInfo/spase:PublicationDate
         # OR spase:ResourceHeader/spase:RevisionHistory/spase:ReleaseDate
         # Using schema:DateTime as defined in: https://schema.org/DateTime        
-        author, authorRole, pubDate, publisher, dataset, backups, contactsList = get_authors(self.metadata)
+        author, authorRole, pubDate, publisher, dataset, backups, contactsList = get_authors(self.metadata, self.file)
         date_published = None
         release, revisions = get_dates(self.metadata)
         if pubDate == "":
@@ -620,16 +620,19 @@ class SPASE():
         #   plus the additional properties if available: affiliation and identifier (ORCiD ID),
         #       which are pulled from SMWG Person SPASE records
         # Using schema:Creator as defined in: https://schema.org/creator
+        creator = []
+        multiple = False
+        matching_contact = False
+        given_name = ""
+        family_name = ""
+        homeDir = str(Path.home()).replace("\\", "/")
         (
             author,
             author_role,
             *_,
             contacts_list,
-        ) = get_authors(self.metadata)
+        ) = get_authors(self.metadata, self.file.replace(f"{homeDir}/", ""))
         author_str = str(author).replace("[", "").replace("]", "")
-        creator = []
-        multiple = False
-        matching_contact = False
         if author:
             # if creators were found in Contact/PersonID
             if "Person/" in author_str:
@@ -705,25 +708,30 @@ class SPASE():
                     # get rid of extra quotations
                     person = author_str.replace('"', "")
                     person = author_str.replace("'", "")
+                    # determine if creator is a consortium
+                    with open("./ignoreCreatorSplit.txt", "r") as f:
+                        do_not_split = f.read()
                     if ", " in person:
-                        family_name, _, given_name = person.partition(",")
-                        # find matching person in contacts, if any, to retrieve affiliation and ORCiD
-                        for key, val in contacts_list.items():
-                            if not matching_contact:
-                                if person == val:
-                                    matching_contact = True
-                                    orcid_id, affiliation, ror = get_ORCiD_and_Affiliation(
-                                        key)
-                                    creator_entry = person_format(
-                                        "creator",
-                                        author_role[0],
-                                        person,
-                                        given_name,
-                                        family_name,
-                                        affiliation,
-                                        orcid_id,
-                                        ror,
-                                    )
+                        # if file is not in list of ones to not have their creators split
+                        if self.file.replace(f"{homeDir}/", "") not in do_not_split:
+                            family_name, _, given_name = person.partition(",")
+                            # find matching person in contacts, if any, to retrieve affiliation and ORCiD
+                            for key, val in contacts_list.items():
+                                if not matching_contact:
+                                    if person == val:
+                                        matching_contact = True
+                                        orcid_id, affiliation, ror = get_ORCiD_and_Affiliation(
+                                            key)
+                                        creator_entry = person_format(
+                                            "creator",
+                                            author_role[0],
+                                            person,
+                                            given_name,
+                                            family_name,
+                                            affiliation,
+                                            orcid_id,
+                                            ror,
+                                        )
                         if not matching_contact:
                             creator_entry = person_format(
                                 "creator", author_role[0], person, given_name, family_name
@@ -747,10 +755,11 @@ class SPASE():
         #   plus the additional properties if available: affiliation and identifier (ORCiD ID),
         #       which are pulled from SMWG Person SPASE records and ROR API
         # Using schema:Person as defined in: https://schema.org/Person
-        author, authorRole, pubDate, pub, dataset, backups, contactsList = get_authors(self.metadata)
+        author, authorRole, pubDate, pub, dataset, backups, contactsList = get_authors(self.metadata, self.file)
         contributor = []
         ror = None
         first_contrib = True
+        individual = ""
         DC_Roles = {}
         role = "ProjectLeader"
         # contributor prioritization (descending)
@@ -798,6 +807,8 @@ class SPASE():
                         orcidID,
                         ror,
                         first_contrib)
+            #print(f"Adding {individual} to contributors list")
+            if individual:
                 contributor.append(individual)
 
         # Step 2: check for ContactPerson, DataCurator, ProjectLeader, ProjectManager,
@@ -821,7 +832,7 @@ class SPASE():
         # Each item is:
         #   {@type: Organization, name: PublishedBy OR Contact (if Role = Publisher) OR last part of RepositoryID}
         # Using schema:Organization as defined in: https://schema.org/Organization
-        author, authorRole, pubDate, publisher, dataset, backups, contactsList = get_authors(self.metadata)
+        author, authorRole, pubDate, publisher, dataset, backups, contactsList = get_authors(self.metadata, self.file)
         ror = None
         
         """if publisher == "":
@@ -1009,7 +1020,7 @@ def get_schema_version(metadata: etree.ElementTree) -> str:
     )
     return schema_version
 
-def get_authors(metadata: etree.ElementTree) -> tuple:
+def get_authors(metadata: etree.ElementTree, file: str = "PlaceholderText") -> tuple:
     """
     Takes an XML tree and scrapes the desired authors (with their roles), publication date,
     publisher, contributors, and publication title. Also scraped are the names and roles of
@@ -1018,7 +1029,7 @@ def get_authors(metadata: etree.ElementTree) -> tuple:
     except for the backups which is a dictionary.
 
     :param metadata: The SPASE metadata object as an XML tree.
-    :type entry: etree.ElementTree object
+    :param file: The absolute path of the SPASE record being scraped.
     :returns: The highest priority authors found within the SPASE record as a list
                 as well as a list of their roles, the publication date, publisher,
                 contributors, and the title of the publication. It also returns any contacts found,
@@ -1110,7 +1121,7 @@ def get_authors(metadata: etree.ElementTree) -> tuple:
             cleanedBackups[contact] = role
     # compare author and contactsList to add author roles from contactsList for matching people found in PubInfo
     # also formats the author list correctly for use in get_creator
-    author, authorRole, contactsList = process_authors(author, authorRole, contactsCopy)
+    author, authorRole, contactsList = process_authors(author, authorRole, contactsCopy, file)
     # remove authors from backups if not considered a ContactPerson or DataCurator
     DC_Roles = {}
     DC_Roles["ContactPerson"] = ["GeneralContact", "HostContact", "MetadataContact", "TechnicalContact"]
@@ -1446,7 +1457,7 @@ def name_splitter(person: str) -> tuple[str, str, str]:
         if "." in name_str:
             given_name, _, family_name = name_str.partition(".")
             # if name has initial(s)
-            if "." in family_name:
+            while "." in family_name:
                 initial, _, family_name = family_name.partition(".")
                 if len(initial) > 1:
                     initial = initial[0]
@@ -1861,7 +1872,7 @@ def get_metadata_license(metadata: etree.ElementTree) -> str:
     return metadata_license
 
 def process_authors(
-    author: List, author_role: List, contacts_list: Dict
+    author: List, author_role: List, contacts_list: Dict, file: str = "PlaceholderText"
 ) -> tuple[List, List, Dict]:
     """
     Groups any contact names from the SPASE Contacts container with their matching names, if
@@ -1876,6 +1887,7 @@ def process_authors(
     :param contacts_list: The dictionary containing the names of people considered to
                             be authors as formatted in the Contacts container in the
                             SPASE record, as well as their roles
+    :param file: The absolute path of the SPASE record being scraped.
 
     :returns: The updated author, author_roles, and contacts_list items after merging any author
                 roles from Contacts with the roles associated with them if found in PubInfo.
@@ -1920,8 +1932,11 @@ def process_authors(
         return author_ordered, author_role_ordered, contacts_copy
     # if all creators were found in PublicationInfo/Authors
     else:
-        # if there are multiple authors
-        if ("; " in author_str) or ("., " in author_str) or (" and " in author_str) or (" & " in author_str):
+        # determine if authors are a consortium
+        with open("./ignoreCreatorSplit.txt", "r") as f:
+            do_not_split = f.read()
+        # if there are multiple authors and file is not in list of ones to not have their creators split
+        if (("; " in author_str) or ("., " in author_str) or (" and " in author_str) or (" & " in author_str)) and file not in do_not_split:
             if ";" in author_str:
                 author = author_str.split("; ")
             elif ".," in author_str:
@@ -1966,7 +1981,7 @@ def process_authors(
             person = author_str.replace('"', "")
             person = author_str.replace("'", "")
             # if author is a person (assuming names contain a comma)
-            if ", " in person:
+            if ", " in person and file not in do_not_split:
                 family_name, _, given_name = person.partition(", ")
                 # also used when there are 3+ comma separated orgs 
                 #   listed as authors - not intended (how to fix?)
@@ -1977,7 +1992,7 @@ def process_authors(
                 author[0] = (f"{family_name}, {given_name}").strip()
             else:
                 # handle case when assumption 'names have commas' fails
-                if ". " in person:
+                if ". " in person and file not in do_not_split:
                     given_name, _, family_name = person.partition(". ")
                     if " " in family_name:
                         initial, _, family_name = family_name.partition(" ")
@@ -2177,6 +2192,7 @@ def get_relation(desired_root: etree.Element, association: list[str]) -> Union[L
                 record = record.replace("'", "")
                 if os.path.isfile(record):
                     test_spase = SPASE(record)
+                    #print(f"Record is {record}")
                     url = test_spase.get_url()
                     name = test_spase.get_name()
                     description = test_spase.get_description()
