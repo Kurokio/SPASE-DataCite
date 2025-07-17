@@ -114,10 +114,11 @@ def clean_nones(value:list | dict):
     else:
         return value
 
-def delete_draft(doi:str) -> None:
+def delete_draft(doi:str, ResourceID:str) -> None:
     """Deletes the DataCite metadata draft record for the given DOI.
     
     :param doi: The unique doi identifier (not including https://doi.org/)
+    :param ResourceID: The SPASE ResourceID for the associated DOI.
     """
     user = input("Enter DataCite username: ")
     password = input("Enter DataCite password: ")
@@ -127,8 +128,13 @@ def delete_draft(doi:str) -> None:
         print(f"Successfully deleted DataCite metadata record for {doi}")
     else:
         print(response.text)
+    try:
+        os.remove(f"{str(Path.cwd())}/SPASE_JSONs/{ResourceID}.json")
+    except FileNotFoundError:
+        print("Could not delete draft JSON in SPASE_JSONs. " \
+        "Check ResourceID provided and try again or delete manually.")
 
-def create_payload(record:str, exists:bool) -> dict[str, dict]:
+def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[str, dict]:
     """Takes the absolute path of a SPASE xml file and a boolean determining if the script
     needs to create a new, local JSON and returns the metadata JSON payload to be submitted 
     to DataCite.
@@ -137,6 +143,9 @@ def create_payload(record:str, exists:bool) -> dict[str, dict]:
                         create/update DataCite metadata for.
     :param exists: A boolean which helps script know if the SPASE record
                         already has a DOI minted.
+    :param existingJSON: A dictionary which contains the existing DataCite metadata draft
+                            record found for the given SPASE record. Has default value
+                            of None type.
     """
 
     # json format must follow this at least
@@ -175,9 +184,7 @@ def create_payload(record:str, exists:bool) -> dict[str, dict]:
     correctCreators = []
     relatedIdentifier = {}
     temporal = {}
-    cadence = {}
     format = []
-    subject2 = []
     rights = []
     geoLocations = []
     fundingReference = {}
@@ -188,39 +195,44 @@ def create_payload(record:str, exists:bool) -> dict[str, dict]:
     # create path to json payload
     cwd = str(Path.cwd()).replace("\\", "/")
     homeDir = str(Path.home()).replace("\\", "/")
-    _, homeDir, pathToFile = record.partition(f"{homeDir}/")
-    pathToFile, _, _ = pathToFile.partition(".xml")
+    _, homeDir, pathToFileXML = record.partition(f"{homeDir}/")
+    pathToFile, _, _ = pathToFileXML.partition(".xml")
     pathToFile, _, fileName = pathToFile.rpartition("/")
 
     if exists:
-        with open(f"{cwd}/SPASE_JSONs/{pathToFile}/{fileName}.json", "r") as f:
-            oldData = f.read()
-        oldData = json.loads(oldData)
-        try:
-            if 'doi' in oldData["data"]["attributes"].keys():
-                doiFound = True
-                doi = oldData["data"]["attributes"]["doi"]
-            if 'publicationYear' in oldData["data"]["attributes"].keys():
-                pubYr = oldData["data"]["attributes"]["publicationYear"]
-                #assert pubYr == int((instance.get_date_published())[:4])
-        # handle case when existing JSON is from before this script was made
-        except KeyError:
-            if 'doi' in oldData.keys():
-                doiFound = True
-                doi = oldData["doi"]
-            if 'publicationYear' in oldData.keys():
-                pubYr = oldData["publicationYear"]
-                #assert pubYr == int((instance.get_date_published())[:4])
+        # if published on DataCite
+        if 'doi' in instance.get_url():
+            protocol, domain, doi = instance.get_url().partition("doi.org/")
+            pubYr = int((instance.get_date_published())[:4])
+            doiFound = True
+        # if draft on DataCite
+        elif existingJSON is not None:
+            # catch case where user did not update the SPASE record with published DOI
+            numReturned = existingJSON["meta"]["total"]
+            for each in existingJSON["meta"]["states"]:
+                if (each["id"] == "findable") and (each["count"] == numReturned):
+                    raise FileExistsError("This record already has a published DOI. Either update" \
+                    "the SPASE record or take this record out of the command. You may then rerun" \
+                    "the script.")
+            doi = existingJSON["data"][0]["id"]
+            pubYr = existingJSON["data"][0]["attributes"]["publicationYear"]
+            doiFound = True
     else:
         pubYr = datetime.now().year
 
     # format creators according to DataCite
     creators = instance.get_creator()
     if creators:
+        organization = False
+        # if one of the known records with consortium as creator, make sure labeled as 'Organizational'
+        with open("./ignoreCreatorSplit.txt", "r") as f:
+            do_not_split = f.read()
+        if pathToFileXML in do_not_split:
+            organization = True
         for each in creators:
-            if (", " in each["name"] or ". " in each["name"] or
+            if ((", " in each["name"] or ". " in each["name"] or
             ("givenName" in each.keys() and "familyName" in each.keys())
-            or "_" in each["name"]):
+            or "_" in each["name"]) and not organization):
                 correctCreator = format_contributor("Remove", each)
             # no comma or period = not a person = organization
             else:
@@ -549,28 +561,35 @@ def create_payload(record:str, exists:bool) -> dict[str, dict]:
         with open(f"{cwd}/SPASE_JSONs/{pathToFile}/{fileName}.json", "w") as f:
             json.dump(payload, f, indent=3, sort_keys=True)
     except FileNotFoundError as err:
-        pass
+        print(err)
 
     return payload
 
 def main(folders:str|list, IDsProvided:bool) -> None:
-    """Takes a path to a directory containing SPASE records or the
-    ResourceID(s) to the specific xml file(s) you wish to create/update
-    DataCite DOI metadata records for, along with a boolean helping the
-    script determine if the value provided was a folder or file(s). With
+    """Takes a path to a directory containing SPASE records, a file 
+    containing ResourceIDs, or the ResourceID(s) to the specific xml file(s) 
+    you wish to create/update DataCite DOI metadata records for, along
+    with a boolean helping the script determine your use case. The script
+    also retrieves the DataCite login credentials from the user. With
     this, the script iterates through the SPASE record(s), extracts desired
     metadata, and formats this metadata into DataCite metadata records (as JSON
     files). The script gives the user the option whether or not to publish the
-    updated/new DataCite metadata record to their account. Regardless of this
-    decision, these DataCite metadata records are saved in a local directory
-    for user validation.
+    updated/new DataCite metadata record to their account. If the user decides
+    to not publish, these DataCite metadata records are saved in a local directory
+    for user validation. Otherwise, these drafts are deleted from this local
+    directory.
     
-    :param folders: A string value of either a path to the SPASE directory or
-                        the ResourceID(s) to the file(s) you wish to update/create
-                        DataCite metadata records for.
-    :param IDsProvided: A boolean which helps the script recognize the value provided
-                            for folders as a directory or file(s).
+    :param folders: A string value of either a path to the SPASE directory, path
+                        to the txt file, or the ResourceID(s) to the file(s) you
+                        wish to update/create DataCite metadata records for.
+    :param IDsProvided: A boolean which helps the script recognize if the value provided
+                            for folders is a directory/file or string of file(s).
+                            If folders is a directory or file containing ResourceIDs,
+                            this should be False. Otherwise, it should be True.
     """
+
+    #Need to keep SPASE_JSONs for new drafts ONLY for user review
+
     # list that holds SPASE records already checked
     searched = []
     SPASE_paths = []
@@ -579,6 +598,7 @@ def main(folders:str|list, IDsProvided:bool) -> None:
     draftDOIs = {}
     homeDir = str(Path.home()).replace("\\", "/")
     cwd = str(Path.cwd()).replace("\\", "/")
+    headers = {'Content-Type': 'application/vnd.api+json'}
 
     # request user for DataCite login info
     user = getpass.getpass("Enter DataCite username: ")
@@ -598,7 +618,25 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                 formattedRecord += ".xml"
             SPASE_paths.append(formattedRecord)
     else:
-        SPASE_paths = getPaths(folders, SPASE_paths)
+        # if given folder/directory
+        if not os.path.isfile(folders):
+            SPASE_paths = getPaths(folders, SPASE_paths)
+        # if given a file containing SPASE record names
+        else:
+            lines = []
+            with open(folders, 'r') as f:
+                lines = f.read().splitlines()
+            for ResourceID in lines:
+                # if the test record was passed
+                if cwd in ResourceID:
+                    formattedRecord = ResourceID.replace("spase://", "")
+                # if a SPASE record outside of this package is passed
+                else:
+                    formattedRecord = homeDir + "/" + ResourceID.replace("spase://", "")
+                if not formattedRecord.endswith('.xml'):
+                    formattedRecord += ".xml"
+                SPASE_paths.append(formattedRecord)
+
     #print("You entered " + folder)
     if len(SPASE_paths) == 0:
         print("No records found. Returning.")
@@ -613,34 +651,55 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                 *_, pathToFile = record.partition(f"{homeDir}/")
                 pathToFile, _, _ = pathToFile.partition(".xml")
                 pathToFile, _, fileName = pathToFile.rpartition("/")
+
+                instance = SPASE(record)
+                # create local JSON to house updated/new DataCite metadata record
                 try:
                     os.makedirs(f"{cwd}/SPASE_JSONs/{pathToFile}")
                 except FileExistsError:
-                    # check if there has already been a payload created for this record
-                    testList = []
-                    testList = getPaths(f"{cwd}/SPASE_JSONs/{pathToFile}", testList)
-                    #print(testList)
-                    if f"{cwd}/SPASE_JSONs/{pathToFile}/{fileName}.json" in testList:
-                        exists = True
+                    pass
+
+                # if record has DOI
+                if 'doi' in instance.get_url():
+                    exists = True
+                    existingJSON = None
+                else:
+                    # call API to retrieve metadata record associated with the given SPASE record, if any
+                    RName = instance.get_name()
+                    url = "https://api.datacite.org/dois?query=titles.title"
+                    response = requests.get(
+                            f'{url}:{RName}',
+                            headers=headers,
+                            auth=(user, password)
+                        )
+                    if response.raise_for_status() is None:
+                        existingJSON = json.loads(response.text)
+                        numReturned = existingJSON["meta"]["total"]
+                        # if matching DataCite metadata record is found
+                        if numReturned > 0:
+                            if existingJSON["data"][0]["attributes"]["titles"][0]["title"] == RName:
+                                exists = True
+                        # if no matching DataCite metadata record is found
+                        else:
+                            existingJSON = None
 
                 # print message for user
-                statusMessage = f"Creating DOI for record {r+1}"
+                if exists:
+                    statusMessage = f"Updating DOI for record {r+1}"
+                else:
+                    statusMessage = f"Creating DOI for record {r+1}"
                 statusMessage += f" of {len(SPASE_paths)}"
                 print(statusMessage)
                 print(record)
                 print()
-                instance = SPASE(record)
 
                 # add record to searched
                 searched.append(record)
 
-                # mint DOI
-                headers = {
-                    'Content-Type': 'application/vnd.api+json'
-                }
                 #print(exists)
-                data = create_payload(record, exists)
+                data = create_payload(record, exists, existingJSON)
                 link = data["data"]["attributes"]["url"]
+                print()
                 #print(link)
 
                 # check to see if simply updating metadata or creating a new DOI
@@ -705,10 +764,14 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                             auth=(user, password),
                         )
                         if response.raise_for_status() is None:
+                            # if want to keep updated JSON in SPASE_JSONs
                             updatedJSON = json.loads(response.text)
                             updatedJSON["data"]["relationships"].pop("client")
                             with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
-                                json.dump(updatedJSON, f, indent=3)"""
+                                json.dump(updatedJSON, f, indent=3)
+                            # delete draft JSON from SPASE_JSONs and point user to view at URL
+                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json)
+                            print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")"""
                 elif confirmation.lower() == 'no' or confirmation.lower() == 'n':
                     incorrectInput = False
                 else:
@@ -723,7 +786,7 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                 if (answer.lower() == 'yes') or (answer.lower() == 'y'):
                     incorrectInput = False
                     # add 'event: publish' to payload to update state from draft to findable
-                    print("Publishing new JSON(s) w DOI(s)")
+                    print("Publishing new JSON(s) with DOI(s)")
                     publish = True
                 elif answer.lower() == 'no' or answer.lower() == 'n':
                     incorrectInput = False
@@ -745,10 +808,16 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                             auth=(user, password)
                         )
                     if response.raise_for_status() is None:
-                        updatedJSON = json.loads(response.text)
-                        updatedJSON["data"]["relationships"].pop("client")
-                        with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
-                            json.dump(updatedJSON, f, indent=3)
+                        # if want to keep updated JSON in SPASE_JSONs
+                        if not publish:
+                            updatedJSON = json.loads(response.text)
+                            updatedJSON["data"]["relationships"].pop("client")
+                            with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
+                                json.dump(updatedJSON, f, indent=3)
+                        # delete draft JSON from SPASE_JSONs and point user to view at URL
+                        """else:
+                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json)
+                            print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")"""
                 # TODO: if publishing: add call to SPASE corrections script to add PubInfo and DOI to SPASE record
         # ask user what to do with JSONs with newly minted DOIs
         if newDOIs:
@@ -773,10 +842,14 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                                 auth=(user, password)
                             )
                         if response.raise_for_status() is None:
+                            # if want to keep updated JSON in SPASE_JSONs
                             updatedJSON = json.loads(response.text)
                             updatedJSON["data"]["relationships"].pop("client")
                             with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
-                                json.dump(updatedJSON, f, indent=3)"""
+                                json.dump(updatedJSON, f, indent=3)
+                            # delete draft JSON from SPASE_JSONs and point user to view at URL
+                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json)
+                            print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")"""
                 elif answer.lower() == 'no' or answer.lower() == 'n':
                     incorrectInput = False
                 else:
@@ -805,21 +878,24 @@ if __name__ == "__main__":
             f" run this command: `python {cwd}/DOI_Creation.py '{cwd}/ExternalSPASE_XMLs/spase' True`."
         )
     else:
-        if "\\" in str(argv[1]):
-            argv[1] = argv[1].replace("\\", "/")
-        # if a SPASE folder/directory is given
-        if not argv[2] == "True":
-            main(argv[1], argv[2] == "True")
-        # if a list of SPASE records are given
+        if len(argv)==2 and argv[1]=='--help':
+            print(help(main))
         else:
-            # if multiple files are given
-            if ", " in str(argv[1]):
-                record = str(argv[1]).split(', ')
-            # only one particular record was given
+            if "\\" in str(argv[1]):
+                argv[1] = argv[1].replace("\\", "/")
+            # if a SPASE folder/directory OR file containing ResourceIDs is given
+            if not argv[2] == "True":
+                main(argv[1], argv[2] == "True")
+            # if a list of SPASE records are given
             else:
-                record = [argv[1]]
-            #print(f"arg1 is {record} and arg2 is {argv[2] == 'True'}")
-            main(record, (argv[2] == "True"))
+                # if multiple files are given
+                if ", " in str(argv[1]):
+                    record = str(argv[1]).split(', ')
+                # only one particular record was given
+                else:
+                    record = [argv[1]]
+                #print(f"arg1 is {record} and arg2 is {argv[2] == 'True'}")
+                main(record, (argv[2] == "True"))
 
 # if have path of XML file(s) in local machine
 # test directories

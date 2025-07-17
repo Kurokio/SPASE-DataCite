@@ -29,13 +29,18 @@ class SPASE():
         self.metadata = etree.parse(file)
         self.file = file
         self.schema_version = get_schema_version(self.metadata)
-        self.namespaces = {"spase": "http://www.spase-group.org/data/schema"}
-        self.kwargs = kwargs
         self.root = self.metadata.getroot()
+        namespace = ""
+        for ns in list(self.root.nsmap.values()):
+            if "spase-group" in ns:
+                namespace = ns
+        self.namespaces = {"spase": namespace}
+        self.kwargs = kwargs
         # find element in tree to iterate over
         for elt in self.root.iter(tag=etree.Element):
             if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
-                or elt.tag.endswith("Observatory") or elt.tag.endswith("Instrument")):
+                or elt.tag.endswith("Observatory") or elt.tag.endswith("Instrument")
+                or elt.tag.endswith("Collection")):
                 self.desiredRoot = elt
         # if want to see entire xml file as a string
         #print(etree.tostring(self.desiredRoot, pretty_print = True).decode(), end=' ')
@@ -775,7 +780,7 @@ class SPASE():
         for key, val in contactsList.items():
             if contributor:
                 first_contrib = False
-            # why .? (not all names will have a period?) Is this even needed?
+            # values w '.' in them will be a name, but not all names have one
             if "." not in val:
                 # add call to get ORCiD and affiliation
                 contributorStr, givenName, familyName = name_splitter(key)
@@ -1015,9 +1020,11 @@ def get_schema_version(metadata: etree.ElementTree) -> str:
 
     :returns: The version of the SPASE schema used in the metadata record.
     """
-    schema_version = metadata.findtext(
-        "{http://www.spase-group.org/data/schema}Version"
-    )
+    namespace = ""
+    for ns in list(metadata.getroot().nsmap.values()):
+        if "spase-group" in ns:
+            namespace = ns
+    schema_version = metadata.findtext(f"{{{namespace}}}Version")
     return schema_version
 
 def get_authors(metadata: etree.ElementTree, file: str = "PlaceholderText") -> tuple:
@@ -1551,10 +1558,14 @@ def get_instrument(metadata: etree.ElementTree, path: str) -> Union[List[Dict], 
         for item in instrumentIDs:
             instrumentIDs[item]["name"] = ""
             instrumentIDs[item]["URL"] = ""
+
+            # get home directory
+            home_dir = str(Path.home()).replace("\\", "/")
+            # split path into needed substrings
             if "Dev/" in path:
                 absPath, sep, after = path.partition("Dev/")
             else:
-                absPath, sep, after = path.partition("NASA/")
+                _, absPath, after = path.partition(f"{home_dir}/")
             record = absPath + item.replace("spase://","") + ".xml"
             record = record.replace("'","")
             if os.path.isfile(record):
@@ -1597,16 +1608,16 @@ def get_observatory(metadata: etree.ElementTree, path: str) -> Union[List[Dict],
         observatoryID = ""
         recordedIDs = []
         instrumentIDs = []
+        # get home directory
+        home_dir = str(Path.home()).replace("\\", "/")
 
         for each in instrument:
             instrumentIDs.append(each["identifier"]["value"])
         for item in instrumentIDs:
             if "Dev/" in path:
                 absPath, sep, after = path.partition("Dev/")
-            elif "ESA/" in path:
-                absPath, sep, after = path.partition("ESA/")
             else:
-                absPath, sep, after = path.partition("NASA/")
+                _, absPath, after = path.partition(f"{home_dir}/")
             record = absPath + item.replace("spase://","") + ".xml"
             record = record.replace("'","")
             # follow link provided by instrument to instrument page, from there grab ObservatoryID
