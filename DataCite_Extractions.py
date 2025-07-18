@@ -1811,7 +1811,7 @@ def get_ORCiD_and_Affiliation(PersonID: str) -> tuple:
     file_path = os.path.join(f"{cwd}/ExternalSPASE_XMLs/", f"spase-{file_name}.xml")
     #print("file path is " + file_path)
     if os.path.isfile(file_path):
-        record = home_dir + "/Dev/SPASE-DataCite/ExternalSPASE_XMLs/" + f"spase-{file_name}" + ".xml"
+        record = home_dir + "/SPASE-DataCite/ExternalSPASE_XMLs/" + f"spase-{file_name}" + ".xml"
     else:
         record = home_dir + PersonID.replace("spase://","/") + ".xml"
     record = record.replace("'","")
@@ -2197,7 +2197,7 @@ def get_relation(desired_root: etree.Element, association: list[str]) -> Union[L
                 file_path = os.path.join(f"{cwd}/ExternalSPASE_XMLs/", f"spase-{file_name}.xml")
                 #print("file path is " + file_path)
                 if os.path.isfile(file_path):
-                    record = home_dir + "/Dev/SPASE-DataCite/ExternalSPASE_XMLs/" + f"spase-{file_name}" + ".xml"
+                    record = home_dir + "/SPASE-DataCite/ExternalSPASE_XMLs/" + f"spase-{file_name}" + ".xml"
                 else:
                     record = home_dir + record.replace("spase://","/") + ".xml"
                 record = record.replace("'", "")
