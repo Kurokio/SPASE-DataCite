@@ -124,6 +124,7 @@
                "lang": "en"
             }
          ],
+         "doi": "10.48322/6cfb-rq65",
          "formats": [
             "CDF",
             "CSV"
@@ -211,19 +212,19 @@
                "resourceTypeGeneral": "Dataset"
             },
             {
-               "relatedIdentifier": "https://hpde.io/SMWG/Instrument/MMS/4/FIELDS/FGM",
+               "relatedIdentifier": "https://spase-metadata.org/SMWG/Instrument/MMS/4/FIELDS/FGM",
                "relatedIdentifierType": "URL",
                "relationType": "IsCollectedBy",
                "resourceTypeGeneral": "Instrument"
             },
             {
-               "relatedIdentifier": "https://hpde.io/SMWG/Instrument/MMS/4/HotPlasmaCompositionAnalyzer",
+               "relatedIdentifier": "https://spase-metadata.org/SMWG/Instrument/MMS/4/HotPlasmaCompositionAnalyzer",
                "relatedIdentifierType": "URL",
                "relationType": "IsCollectedBy",
                "resourceTypeGeneral": "Instrument"
             },
             {
-               "relatedIdentifier": "https://hpde.io/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
+               "relatedIdentifier": "https://spase-metadata.org/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S",
                "relatedIdentifierType": "URL",
                "relatedMetadataScheme": "SPASE",
                "relationType": "HasMetadata",
@@ -262,68 +263,49 @@
             },
             {
                "classificationCode": "Earth.Magnetosheath",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
-                  "@type": "DefinedTermSet",
-                  "name": "SPASE Region",
-                  "url": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Earth Magnetosheath",
                "subjectScheme": "SPASE ObservedRegion"
             },
             {
                "classificationCode": "Earth.Magnetosphere",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Earth Magnetosphere",
                "subjectScheme": "SPASE ObservedRegion"
             },
             {
                "classificationCode": "Earth.Magnetosphere.Magnetotail",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Earth Magnetosphere Magnetotail",
                "subjectScheme": "SPASE ObservedRegion"
             },
             {
                "classificationCode": "Earth.Magnetosphere.Main",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Earth Magnetosphere Main",
                "subjectScheme": "SPASE ObservedRegion"
             },
             {
                "classificationCode": "Earth.Magnetosphere.RadiationBelt",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Earth Magnetosphere RadiationBelt",
                "subjectScheme": "SPASE ObservedRegion"
             },
             {
                "classificationCode": "Earth.NearSurface.EquatorialRegion",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Earth NearSurface EquatorialRegion",
                "subjectScheme": "SPASE ObservedRegion"
             },
             {
                "classificationCode": "Earth.NearSurface.Plasmasphere",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Earth NearSurface Plasmasphere",
                "subjectScheme": "SPASE ObservedRegion"
             },
             {
                "classificationCode": "Heliosphere.NearEarth",
-               "schemeUri": {
-                  "@id": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region"
-               },
+               "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#Region",
                "subject": "Heliosphere NearEarth",
                "subjectScheme": "SPASE ObservedRegion"
             }
@@ -343,7 +325,7 @@
             "resourceType": "NumericalData",
             "resourceTypeGeneral": "Dataset"
          },
-         "url": "https://hpde.io/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S"
+         "url": "https://spase-metadata.org/NASA/NumericalData/MMS/4/HotPlasmaCompositionAnalyzer/Burst/Level2/Ion/PT0.625S"
       },
       "type": "dois"
    }

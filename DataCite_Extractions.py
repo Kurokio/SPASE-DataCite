@@ -46,11 +46,11 @@ class SPASE():
         #print(etree.tostring(self.desiredRoot, pretty_print = True).decode(), end=' ')
 
     def get_id(self) -> str:
-        # Mapping: schema:identifier = hpde.io landing page for the SPASE record
+        # Mapping: schema:identifier = spase-metadata.org landing page for the SPASE record
         ResourceID = get_ResourceID(self.metadata, self.namespaces)
-        hpdeURL = ResourceID.replace("spase://", "https://hpde.io/")
+        landingPageURL = ResourceID.replace("spase://", "https://spase-metadata.org/")
 
-        return hpdeURL
+        return landingPageURL
 
     def get_name(self) -> str:
         # Mapping: schema:name = spase:ResourceHeader/spase:ResourceName
@@ -73,7 +73,7 @@ class SPASE():
         return description
 
     def get_url(self) -> str:
-        # Mapping: schema:url = spase:ResourceHeader/spase:DOI (or https://hpde.io landing page, if no DOI)
+        # Mapping: schema:url = spase:ResourceHeader/spase:DOI (or https://spase-metadata.org landing page, if no DOI)
         desiredTag = self.desiredRoot.tag.split("}")
         SPASE_Location = ".//spase:" + f"{desiredTag[1]}/spase:ResourceHeader/spase:DOI"
         url = self.metadata.findtext(
@@ -143,13 +143,13 @@ class SPASE():
         return keywords
 
     def get_identifier(self) -> Union[Dict, List[Dict], None]:
-        # Mapping: schema:identifier = spase:ResourceHeader/spase:DOI (or https://hpde.io landing page, if no DOI)
+        # Mapping: schema:identifier = spase:ResourceHeader/spase:DOI (or https://spase-metadata.org landing page, if no DOI)
         # Each item is: {@id: URL, @type: schema:PropertyValue, propertyID: URI for identifier scheme, value: identifier value, url: URL}
         # Uses identifier scheme URI, provided at: https://schema.org/identifier
         #  OR schema:PropertyValue, provided at: https://schema.org/PropertyValue
         url = self.get_url()
         ID = get_ResourceID(self.metadata, self.namespaces)
-        hpdeURL = self.get_id()
+        landingPageURL = self.get_id()
         # if SPASE record has a DOI
         if "doi" in url:
             temp = url.split("/")
@@ -159,11 +159,11 @@ class SPASE():
                             "propertyID": "https://registry.identifiers.org/registry/doi",
                             "value": value,
                             "url": url},
-                        {"@id": hpdeURL,
+                        {"@id": landingPageURL,
                             "@type": "PropertyValue",
                             "propertyID": "SPASE",
                             "value": ID,
-                            "url": hpdeURL}
+                            "url": landingPageURL}
                         ]
         # if SPASE record only has landing page instead
         else:
@@ -270,7 +270,7 @@ class SPASE():
         if "doi" in content_url:
             doi = True
             resource_id = get_ResourceID(self.metadata, self.namespaces)
-            content_url = resource_id.replace("spase://", "https://hpde.io/")
+            content_url = resource_id.replace("spase://", "https://spase-metadata.org/")
         # small lookup table for commonly used licenses in SPASE
         #   (CC0 for NASA, CC-BY-NC-3.0 for ESA, etc)
         common_licenses = [
@@ -301,7 +301,7 @@ class SPASE():
                 "contentUrl": content_url,
                 "identifier": content_url,
             }
-            # if hpde.io landing page not used as top-level @id, include here as @id
+            # if spase-metadata.org landing page not used as top-level @id, include here as @id
             if doi:
                 entry["@id"] = content_url
             if metadata_license:
@@ -1562,10 +1562,7 @@ def get_instrument(metadata: etree.ElementTree, path: str) -> Union[List[Dict], 
             # get home directory
             home_dir = str(Path.home()).replace("\\", "/")
             # split path into needed substrings
-            if "Dev/" in path:
-                absPath, sep, after = path.partition("Dev/")
-            else:
-                _, absPath, after = path.partition(f"{home_dir}/")
+            _, absPath, after = path.partition(f"{home_dir}/")
             record = absPath + item.replace("spase://","") + ".xml"
             record = record.replace("'","")
             if os.path.isfile(record):
@@ -1614,10 +1611,7 @@ def get_observatory(metadata: etree.ElementTree, path: str) -> Union[List[Dict],
         for each in instrument:
             instrumentIDs.append(each["identifier"]["value"])
         for item in instrumentIDs:
-            if "Dev/" in path:
-                absPath, sep, after = path.partition("Dev/")
-            else:
-                _, absPath, after = path.partition(f"{home_dir}/")
+            _, absPath, after = path.partition(f"{home_dir}/")
             record = absPath + item.replace("spase://","") + ".xml"
             record = record.replace("'","")
             # follow link provided by instrument to instrument page, from there grab ObservatoryID
@@ -2032,14 +2026,14 @@ def verify_type(url: str) -> tuple[bool, bool, dict]:
     is_article = False
     non_spase_info = {}
     if url is not None:
-        if "hpde.io" in url:
+        if "spase-metadata.org" in url:
             if "Data" in url:
                 is_dataset = True
         # case where url provided is a DOI
         else:
             link = requests.head(url, timeout=30)
-            # check to make sure doi resolved to an hpde.io page
-            if "hpde.io" in link.headers["location"]:
+            # check to make sure doi resolved to an spase-metadata.org page
+            if "spase-metadata.org" in link.headers["location"]:
                 if "Data" in link.headers["location"]:
                     is_dataset = True
             # if not, call DataCite API to check resourceTypeGeneral
