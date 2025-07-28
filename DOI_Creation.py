@@ -185,10 +185,6 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
     relatedIdentifier = {}
     temporal = {}
     format = []
-    rights = []
-    geoLocations = []
-    fundingReference = {}
-    infoURL = {}
     date = {}
     doiFound = False
 
@@ -291,6 +287,7 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
         alternateIdentifier = [{"alternateIdentifierType": "SPASE ResourceID",
                                 "alternateIdentifier": get_ResourceID(instance.metadata, instance.namespaces)}]
     if instance.get_license() is not None:
+        rights = []
         rightsDict = instance.get_license()
         for each in rightsDict:
             rights.append({"rights": each["name"],
@@ -299,33 +296,38 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
                         "rightsIdentifier": each["rightsIdentifier"],
                         "rightsIdentifierScheme": each["rightsIdentifierScheme"],
                         "lang": "en"})
-    if not rights:
+    else:
         rights = None
 
-    subject = instance.get_keywords()
-    subjects = []
-    for key, val in subject.items():
-        if key == "keywords":
-            for each in val:
-                subjects.append({"subject": each})
-        # measurementTypes require extra info
-        else:
-            for each in val:
-                # separate words with spaces for subject field
-                res = re.split(r"(?=[A-Z])", each)
-                pretty_name = " ".join(filter(None, res))
-                # create subject entry
-                subjects.append({"subject": pretty_name,
-                                    "subjectScheme": "SPASE MeasurementType",
-                                    "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#MeasurementType",
-                                    "classificationCode": each})
+    if instance.get_keywords() is not None:
+        subject = instance.get_keywords()
+        subjects = []
+        for key, val in subject.items():
+            if key == "keywords":
+                for each in val:
+                    subjects.append({"subject": each})
+            # measurementTypes require extra info
+            else:
+                for each in val:
+                    # separate words with spaces for subject field
+                    res = re.split(r"(?=[A-Z])", each)
+                    pretty_name = " ".join(filter(None, res))
+                    # create subject entry
+                    subjects.append({"subject": pretty_name,
+                                        "subjectScheme": "SPASE MeasurementType",
+                                        "schemeUri": "https://spase-group.org/data/model/spase-latest/spase-latest_xsd.htm#MeasurementType",
+                                        "classificationCode": each})
+    else:
+        subjects = None
 
-    dates = []
     if instance.get_temporal_coverage() is not None:
+        dates = []
         date["coverage"] = instance.get_temporal_coverage()
         temporal = {"date": date["coverage"],
                     "dateType": "Coverage"}
         dates.append(temporal)
+    else:
+        dates = None
     """if get_temporal(instance.metadata, instance.namespaces) is not None:
         date["other"] = get_temporal(instance.metadata, instance.namespaces)[1]
         cadence = {"date": date["other"],
@@ -338,6 +340,7 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
     #dates.append(dateModified)
 
     if instance.get_spatial_coverage() is not None:
+        geoLocations = []
         observedRegions = instance.get_spatial_coverage()
         # add to geoLocation and subject
         for each in observedRegions:
@@ -346,6 +349,8 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
                                     "subjectScheme": "SPASE ObservedRegion",
                                     "schemeUri": each["keywords"]["inDefinedTermSet"]["@id"],
                                     "classificationCode": each["keywords"]["termCode"]})
+    else:
+        geoLocations = None
 
 
     for each in instance.get_potential_action():
@@ -357,6 +362,7 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
     # @type stored in resourceTypeGeneral
     relatedIdentifiers = []
     if instance.get_citation() is not None:
+        infoURL = {}
         for each in instance.get_citation():
             #print(each["url"])
             try:
@@ -379,6 +385,8 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
             except requests.exceptions.RequestException as err:
                 # something else happened
                 print(f"Something went wrong for {each['url']}")
+    else:
+        infoURL = None
     if instance.get_is_based_on() is not None:
         relatedIdentifier["isDerivedFrom"] = instance.get_is_based_on()
         for each in relatedIdentifier["isDerivedFrom"]:
@@ -523,6 +531,8 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
             if "identifier" in each.keys():
                 entry["awardNumber"] = each["identifier"]
             fundingReference.append(entry)
+    else:
+        fundingReference = None
 
     # 8 (all in Numerical) 'contributor' roles in Contacts
     # ex: NASA/NumericalData/MMS/1/FIELDS/FGM/Burst/Level2/PT0.0078125S

@@ -127,7 +127,7 @@ class SPASE():
         return is_accessible_for_free
 
     def get_keywords(self) -> Union[Dict, None]:
-        # Mapping: schema:keywords = spase:Keyword AND spase:MeasurementType
+        # Mapping: spase:Keyword AND spase:MeasurementType = schema:keywords
         keywords = {}
         keywords["keywords"] = []
         keywords["measurementTypes"] = []
@@ -1055,7 +1055,8 @@ def get_authors(metadata: etree.ElementTree, file: str = "PlaceholderText") -> t
     PI_child = None
     root = metadata.getroot()
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
 
     # traverse xml to extract needed info
@@ -1173,7 +1174,8 @@ def get_accessURLs(metadata: etree.ElementTree) -> tuple:
     j = 0
     root = metadata.getroot()
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
 
     # get Formats before iteration due to order of elements in SPASE record
@@ -1243,7 +1245,8 @@ def get_dates(metadata: etree.ElementTree) -> tuple:
     """
     root = metadata.getroot()
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
     RevisionHistory = []
     ReleaseDate = ""
@@ -1298,7 +1301,8 @@ def get_repoID(metadata: etree.ElementTree) -> str:
     root = metadata.getroot()
     repoID = None
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
     # traverse xml to extract needed info
     for child in desiredRoot.iter(tag=etree.Element):
@@ -1546,7 +1550,8 @@ def get_instrument(metadata: etree.ElementTree, path: str) -> Union[List[Dict], 
     instrument = []
     instrumentIDs = {}
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
     for child in desiredRoot.iter(tag=etree.Element):
         if child.tag.endswith("InstrumentID"):
@@ -1687,7 +1692,8 @@ def get_alternate_name(metadata: etree.ElementTree) -> Union[str, None]:
     root = metadata.getroot()
     alternate_name = None
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
     for child in desiredRoot.iter(tag=etree.Element):
         if child.tag.endswith("ResourceHeader"):
@@ -1760,7 +1766,8 @@ def get_mentions(metadata: etree.ElementTree) -> Union[List[Dict], Dict, None]:
     root = metadata.getroot()
     desired_root = None
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desired_root = elt
     mentions = get_relation(desired_root, ["Other"])
     return mentions
@@ -1780,7 +1787,8 @@ def get_is_part_of(metadata: etree.ElementTree) -> Union[List[Dict], Dict, None]
     root = metadata.getroot()
     desired_root = None
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desired_root = elt
     is_part_of = get_relation(desired_root, ["PartOf"])
     return is_part_of
@@ -1843,7 +1851,8 @@ def get_temporal(metadata: etree.ElementTree, namespaces: Dict) -> Union[List, N
     # Schema found at https://schema.org/temporal
     root = metadata.getroot()
     for elt in root.iter(tag=etree.Element):
-        if elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData"):
+        if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
     
     desiredTag = desiredRoot.tag.split("}")
