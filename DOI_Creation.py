@@ -753,25 +753,20 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                     incorrectInput = False
                     # request to update DOI
                     for key, val in publishedDOIs.items():
-                        protocol, domain, path = key.partition("hpde.io/")
+                        protocol, domain, path = key.partition("spase-metadata.org/")
                         with open(f"{cwd}/SPASE_JSONs/{path}.json", 'r') as desiredFile:
                             data = desiredFile.read()
                         data = json.loads(data)
-                        """response = requests.put(
+                        response = requests.put(
                             f'https://api.datacite.org/dois/{val}',
                             headers=headers,
                             json=data,
                             auth=(user, password),
                         )
                         if response.raise_for_status() is None:
-                            # if want to keep updated JSON in SPASE_JSONs
-                            updatedJSON = json.loads(response.text)
-                            updatedJSON["data"]["relationships"].pop("client")
-                            with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
-                                json.dump(updatedJSON, f, indent=3)
                             # delete draft JSON from SPASE_JSONs and point user to view at URL
-                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json)
-                            print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")"""
+                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
+                            print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")
                 elif confirmation.lower() == 'no' or confirmation.lower() == 'n':
                     incorrectInput = False
                 else:
@@ -795,12 +790,12 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                 else:
                     print("Please enter 'yes'/'no' or 'y/n'.")
                 for key, val in draftDOIs.items():
-                    protocol, domain, path = key.partition("hpde.io/")
+                    protocol, domain, path = key.partition("spase-metadata.org/")
                     with open(f"{cwd}/SPASE_JSONs/{path}.json", 'r') as desiredFile:
                         data = desiredFile.read()
                     data = json.loads(data)
-                    #if publish:
-                        #data["attributes"]["event"] = "publish"
+                    if publish:
+                        data["attributes"]["event"] = "publish"
                     response = requests.put(
                             f'https://api.datacite.org/dois/{val}',
                             headers=headers,
@@ -815,9 +810,9 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                             with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
                                 json.dump(updatedJSON, f, indent=3)
                         # delete draft JSON from SPASE_JSONs and point user to view at URL
-                        """else:
-                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json)
-                            print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")"""
+                        else:
+                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
+                            print(f"View your newly published DataCite JSON at https://api.datacite.org/dois/{val}")
                 # TODO: if publishing: add call to SPASE corrections script to add PubInfo and DOI to SPASE record
         # ask user what to do with JSONs with newly minted DOIs
         if newDOIs:
@@ -830,26 +825,21 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                     # add 'event: publish' to payload to update state from draft to findable
                     print("Publishing new JSON(s) w DOI(s)")
                     for key, val in newDOIs.items():
-                        protocol, domain, path = key.partition("hpde.io/")
+                        protocol, domain, path = key.partition("spase-metadata.org/")
                         with open(f"{cwd}/SPASE_JSONs/{path}.json", 'r') as desiredFile:
                             data = desiredFile.read()
                         data = json.loads(data)
-                        #data["attributes"]["event"] = "publish"
-                        """response = requests.put(
+                        data["attributes"]["event"] = "publish"
+                        response = requests.put(
                                 'https://api.datacite.org/dois/{val}',
                                 headers=headers,
                                 json=data,
                                 auth=(user, password)
                             )
                         if response.raise_for_status() is None:
-                            # if want to keep updated JSON in SPASE_JSONs
-                            updatedJSON = json.loads(response.text)
-                            updatedJSON["data"]["relationships"].pop("client")
-                            with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
-                                json.dump(updatedJSON, f, indent=3)
                             # delete draft JSON from SPASE_JSONs and point user to view at URL
-                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json)
-                            print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")"""
+                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
+                            print(f"View your newly created DataCite JSON at https://api.datacite.org/dois/{val}")
                 elif answer.lower() == 'no' or answer.lower() == 'n':
                     incorrectInput = False
                 else:
