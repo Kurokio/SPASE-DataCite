@@ -1493,7 +1493,8 @@ def get_information_url(metadata: etree.ElementTree) -> Union[List[Dict], None]:
     description = ""
     for elt in root.iter(tag=etree.Element):
         if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
-            or elt.tag.endswith("Observatory") or elt.tag.endswith("Instrument")):
+            or elt.tag.endswith("Observatory") or elt.tag.endswith("Instrument")
+            or elt.tag.endswith("Collection")):
             desiredRoot = elt
     # traverse xml to extract needed info
     for child in desiredRoot.iter(tag=etree.Element):
@@ -2138,7 +2139,7 @@ def get_ResourceID(metadata: etree.ElementTree, namespaces: Dict):
     for elt in root.iter(tag=etree.Element):
         if (elt.tag.endswith("NumericalData") or elt.tag.endswith("DisplayData")
                 or elt.tag.endswith("Observatory") or elt.tag.endswith("Instrument")
-                or elt.tag.endswith("Person")):
+                or elt.tag.endswith("Person") or elt.tag.endswith("Collection")):
             desiredRoot = elt
 
     desiredTag = desiredRoot.tag.split("}")
