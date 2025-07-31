@@ -6,6 +6,7 @@ from lxml import etree
 import getpass
 from pathlib import Path
 from datetime import datetime
+from urllib.parse import quote
 from DataCite_Extractions import (get_temporal, get_instrument, get_observatory,
                                     get_alternate_name, get_is_part_of,
                                     get_mentions, get_ResourceID, get_metadata_license,
@@ -113,26 +114,6 @@ def clean_nones(value:list | dict):
         }
     else:
         return value
-
-def delete_draft(doi:str, ResourceID:str) -> None:
-    """Deletes the DataCite metadata draft record for the given DOI.
-    
-    :param doi: The unique doi identifier (not including https://doi.org/)
-    :param ResourceID: The SPASE ResourceID for the associated DOI.
-    """
-    user = input("Enter DataCite username: ")
-    password = input("Enter DataCite password: ")
-    url = f"https://api.datacite.org/dois/{doi}"
-    response = requests.delete(url, auth=(user, password))
-    if response.raise_for_status() is None:
-        print(f"Successfully deleted DataCite metadata record for {doi}")
-    else:
-        print(response.text)
-    try:
-        os.remove(f"{str(Path.cwd())}/SPASE_JSONs/{ResourceID}.json")
-    except FileNotFoundError:
-        print("Could not delete draft JSON in SPASE_JSONs. " \
-        "Check ResourceID provided and try again or delete manually.")
 
 def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[str, dict]:
     """Takes the absolute path of a SPASE xml file and a boolean determining if the script
@@ -561,6 +542,7 @@ def create_payload(record:str, exists:bool, existingJSON: dict = None) -> dict[s
                     "formats": format,
                     "language": language}
     optionals = clean_nones(optionals)
+    #print(str(optionals))
 
     if doiFound:
         optionals["doi"] = doi
@@ -608,11 +590,13 @@ def main(folders:str|list, IDsProvided:bool) -> None:
     draftDOIs = {}
     homeDir = str(Path.home()).replace("\\", "/")
     cwd = str(Path.cwd()).replace("\\", "/")
-    headers = {'Content-Type': 'application/vnd.api+json'}
+    headers_return = {'accept': 'application/vnd.api+json'}
+    headers_add_or_update = {"accept": "application/vnd.api+json",
+                                "content-type": "application/json"}
 
     # request user for DataCite login info
-    user = getpass.getpass("Enter DataCite username: ")
-    password = getpass.getpass("Enter DataCite password: ")
+    user = getpass.getpass("Enter DataCite username: ").strip()
+    password = getpass.getpass("Enter DataCite password: ").strip()
 
     if IDsProvided:
         # obtains all filepaths to all SPASE records found in the given list of ResourceIDs
@@ -654,7 +638,7 @@ def main(folders:str|list, IDsProvided:bool) -> None:
         #print("The number of records is " + str(len(SPASE_paths)))
         # iterate through all SPASE records
         for r, record in enumerate(SPASE_paths):
-            if record not in searched:
+            if record not in searched and record.endswith('.xml'):
                 exists = False
                 #print(record)
                 # make file reflect the change made in this script
@@ -679,7 +663,7 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                     url = "https://api.datacite.org/dois?query=titles.title"
                     response = requests.get(
                             f'{url}:{RName}',
-                            headers=headers,
+                            headers=headers_return,
                             auth=(user, password)
                         )
                     if response.raise_for_status() is None:
@@ -717,20 +701,10 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                 if 'doi' in instance.get_url():
                     protocol, domain, doi = instance.get_url().partition("doi.org/")
                     publishedDOIs[link] = doi
-                    # remove DataCite login info from JSON
-                    if 'relationships' in data["data"].keys():
-                        data["data"]["relationships"].pop("client")
-                        with open(f"{cwd}/SPASE_JSONs/{pathToFile}/{fileName}.json", 'w') as desiredFile:
-                            json.dump(data, desiredFile, indent=3, sort_keys=True)
                 # DOI in local JSON means it is a draft = publish or update metadata
                 elif 'doi' in data["data"]["attributes"].keys():
                     doi = data["data"]["attributes"]["doi"]
                     draftDOIs[link] = doi
-                    # remove DataCite login info from JSON
-                    if 'relationships' in data["data"].keys():
-                        data["data"]["relationships"].pop("client")
-                        with open(f"{cwd}/SPASE_JSONs/{pathToFile}/{fileName}.json", 'w') as desiredFile:
-                            json.dump(data, desiredFile, indent=3, sort_keys=True)
                 # means no DOI in SPASE record or draft = make one
                 else:
                     # request to create DOI
@@ -738,7 +712,7 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                     print()
                     response = requests.post(
                         'https://api.datacite.org/dois',
-                        headers=headers,
+                        headers=headers_add_or_update,
                         json=data,
                         auth=(user, password)
                     )
@@ -769,8 +743,8 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                         data = json.loads(data)
                         response = requests.put(
                             f'https://api.datacite.org/dois/{val}',
-                            headers=headers,
-                            json=data,
+                            headers=headers_add_or_update,
+                            json=json.dumps(data),
                             auth=(user, password),
                         )
                         if response.raise_for_status() is None:
@@ -801,28 +775,38 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                     print("Please enter 'yes'/'no' or 'y/n'.")
                 for key, val in draftDOIs.items():
                     protocol, domain, path = key.partition("spase-metadata.org/")
-                    with open(f"{cwd}/SPASE_JSONs/{path}.json", 'r') as desiredFile:
-                        data = desiredFile.read()
-                    data = json.loads(data)
                     if publish:
-                        data["attributes"]["event"] = "publish"
-                    response = requests.put(
-                            f'https://api.datacite.org/dois/{val}',
-                            headers=headers,
-                            json=data,
-                            auth=(user, password)
-                        )
-                    if response.raise_for_status() is None:
-                        # if want to keep updated JSON in SPASE_JSONs
-                        if not publish:
-                            updatedJSON = json.loads(response.text)
-                            updatedJSON["data"]["relationships"].pop("client")
-                            with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
-                                json.dump(updatedJSON, f, indent=3)
-                        # delete draft JSON from SPASE_JSONs and point user to view at URL
-                        else:
-                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
-                            print(f"View your newly published DataCite JSON at https://api.datacite.org/dois/{val}")
+                        data = {
+                            "data": {
+                                "type": "dois",
+                                "attributes": {
+                                    "event": "publish"
+                                    }
+                                }
+                            }
+                    else:
+                        with open(f"{cwd}/SPASE_JSONs/{path}.json", 'r') as desiredFile:
+                            data = desiredFile.read()
+                        data = json.loads(data)
+                    if existingJSON is not None:
+                        if existingJSON != data:
+                            response = requests.put(
+                                    f'https://api.datacite.org/dois/{val}',
+                                    headers=headers_add_or_update,
+                                    json=data,
+                                    auth=(user, password),
+                                )
+                            if response.raise_for_status() is None:
+                                # if want to keep updated JSON in SPASE_JSONs
+                                if not publish:
+                                    updatedJSON = json.loads(response.text)
+                                    with open(f"{cwd}/SPASE_JSONs/{path}.json", "w") as f:
+                                        json.dump(updatedJSON, f, indent=3)
+                                # delete draft JSON from SPASE_JSONs and point user to view at URL
+                                else:
+                                    # add check to delete dir if only file there
+                                    os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
+                                    print(f"View your newly published DataCite JSON at https://api.datacite.org/dois/{val}")
                 # TODO: if publishing: add call to SPASE corrections script to add PubInfo and DOI to SPASE record
         # ask user what to do with JSONs with newly minted DOIs
         if newDOIs:
@@ -836,14 +820,17 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                     print("Publishing new JSON(s) w DOI(s)")
                     for key, val in newDOIs.items():
                         protocol, domain, path = key.partition("spase-metadata.org/")
-                        with open(f"{cwd}/SPASE_JSONs/{path}.json", 'r') as desiredFile:
-                            data = desiredFile.read()
-                        data = json.loads(data)
-                        data["attributes"]["event"] = "publish"
+                        data = {"data": {
+                                    "type": "dois",
+                                    "attributes": {
+                                    "event": "publish"
+                                    }
+                                }
+                                }
                         response = requests.put(
-                                'https://api.datacite.org/dois/{val}',
-                                headers=headers,
-                                json=data,
+                                f'https://api.datacite.org/dois/{val}',
+                                headers=headers_add_or_update,
+                                json=json.dumps(data),
                                 auth=(user, password)
                             )
                         if response.raise_for_status() is None:
@@ -906,23 +893,6 @@ if __name__ == "__main__":
 
 # if just have ResourceID's
 #updateList = ["NASA/DisplayData/ParkerSolarProbe/WISPR/PNG/PT30M", "NASA/DisplayData/Cluster-Salsa/WBD/DS/PT30S"]
-updateList = ["NASA/NumericalData/PUNCH/NFI/Level0/CR4/PT8M",
-"NASA/NumericalData/PUNCH/NFI/Level0/PM4/PT4M",
-"NASA/NumericalData/PUNCH/NFI/Level0/PP4/PT4M",
-"NASA/NumericalData/PUNCH/NFI/Level0/PZ4/PT4M",
-"NASA/NumericalData/PUNCH/WFI/1/Level0/CR1/PT8M",
-"NASA/NumericalData/PUNCH/WFI/1/Level0/PM1/PT4M",
-"NASA/NumericalData/PUNCH/WFI/1/Level0/PP1/PT4M",
-"NASA/NumericalData/PUNCH/WFI/1/Level0/PZ1/PT4M",
-"NASA/NumericalData/PUNCH/WFI/2/Level0/CR2/PT8M",
-"NASA/NumericalData/PUNCH/WFI/2/Level0/PM2/PT4M",
-"NASA/NumericalData/PUNCH/WFI/2/Level0/PP2/PT4M",
-"NASA/NumericalData/PUNCH/WFI/2/Level0/PZ2/PT4M",
-"NASA/NumericalData/PUNCH/WFI/3/Level0/CR3/PT8M",
-"NASA/NumericalData/PUNCH/WFI/3/Level0/PM3/PT4M",
-"NASA/NumericalData/PUNCH/WFI/3/Level0/PP3/PT4M",
-"NASA/NumericalData/PUNCH/WFI/3/Level0/PZ3/PT4M"
-]
 # bad ex (No creators) "NASA/DisplayData/Coriolis/SMEI/IMAGES"]
 
 updateList = ["Dev/SPASE-DataCite/ExternalSPASE_XMLs/spase"]
