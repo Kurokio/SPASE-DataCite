@@ -11,6 +11,7 @@ from DataCite_Extractions import (get_temporal, get_instrument, get_observatory,
                                     get_alternate_name, get_is_part_of,
                                     get_mentions, get_ResourceID, get_metadata_license,
                                     SPASE)
+from removeSPASE_JSON import remove_old_SPASE_JSON
 
 # DISCLAIMER: This script assumes you have cloned the SPASE repo in your home directory
 
@@ -744,12 +745,12 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                         response = requests.put(
                             f'https://api.datacite.org/dois/{val}',
                             headers=headers_add_or_update,
-                            json=json.dumps(data),
+                            json=data,
                             auth=(user, password),
                         )
                         if response.raise_for_status() is None:
                             # delete draft JSON from SPASE_JSONs and point user to view at URL
-                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
+                            remove_old_SPASE_JSON(f"{cwd}/SPASE_JSONs/{path}.json")
                             print(f"View your newly updated DataCite JSON at https://api.datacite.org/dois/{val}")
                 elif confirmation.lower() == 'no' or confirmation.lower() == 'n':
                     incorrectInput = False
@@ -804,8 +805,7 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                                         json.dump(updatedJSON, f, indent=3)
                                 # delete draft JSON from SPASE_JSONs and point user to view at URL
                                 else:
-                                    # add check to delete dir if only file there
-                                    os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
+                                    remove_old_SPASE_JSON(f"{cwd}/SPASE_JSONs/{path}.json")
                                     print(f"View your newly published DataCite JSON at https://api.datacite.org/dois/{val}")
                 # TODO: if publishing: add call to SPASE corrections script to add PubInfo and DOI to SPASE record
         # ask user what to do with JSONs with newly minted DOIs
@@ -830,12 +830,12 @@ def main(folders:str|list, IDsProvided:bool) -> None:
                         response = requests.put(
                                 f'https://api.datacite.org/dois/{val}',
                                 headers=headers_add_or_update,
-                                json=json.dumps(data),
+                                json=data,
                                 auth=(user, password)
                             )
                         if response.raise_for_status() is None:
                             # delete draft JSON from SPASE_JSONs and point user to view at URL
-                            os.remove(f"{cwd}/SPASE_JSONs/{path}.json")
+                            remove_old_SPASE_JSON(f"{cwd}/SPASE_JSONs/{path}.json")
                             print(f"View your newly created DataCite JSON at https://api.datacite.org/dois/{val}")
                 elif answer.lower() == 'no' or answer.lower() == 'n':
                     incorrectInput = False
@@ -896,5 +896,4 @@ if __name__ == "__main__":
 # bad ex (No creators) "NASA/DisplayData/Coriolis/SMEI/IMAGES"]
 
 updateList = ["Dev/SPASE-DataCite/ExternalSPASE_XMLs/spase"]
-updateList = ["NASA/NumericalData/SDO/AIA/PT12S"]
 main(updateList, True)"""

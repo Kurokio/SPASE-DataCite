@@ -2,6 +2,7 @@ import requests
 import os
 import getpass
 from pathlib import Path
+from removeSPASE_JSON import remove_old_SPASE_JSON
 
 def delete_draft(doi:str, ResourceID:str) -> None:
     """Deletes the DataCite metadata draft record for the given DOI.
@@ -27,7 +28,7 @@ def delete_draft(doi:str, ResourceID:str) -> None:
     
     # remove draft json from SPASE_JSONs
     try:
-        os.remove(f"{str(Path.cwd())}/SPASE_JSONs/{ResourceID}.json")
+        remove_old_SPASE_JSON(f"{str(Path.cwd())}/SPASE_JSONs/{ResourceID}.json")
     except FileNotFoundError:
         print("Could not delete draft JSON in SPASE_JSONs. " \
         "Check ResourceID provided and try again or delete manually.")

@@ -572,7 +572,7 @@ class SPASE():
                 temporal_coverage = {"@type": "DateTime",
                                     "temporalCoverage": f"{start.strip()}/{stop.strip()}"}
             else:
-                temporal_coverage = f"{start}/.."
+                temporal_coverage = f"{start}/"
         else:
             temporal_coverage = None
         return temporal_coverage
